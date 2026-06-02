@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Illumineire | A New Era of Fragrance</title>
     
-    <!-- React & ReactDOM -->
+    <!-- React, ReactDOM, Babel & Tailwind -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Supabase JS Client -->
+    <!-- Supabase Real-Time Backend -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -26,7 +26,7 @@
                     animation: {
                         'gradient-x': 'gradient-x 6s ease infinite',
                         'float-soft': 'float-soft 6s ease-in-out infinite',
-                        'pulse-glow': 'pulse-glow 4s ease-in-out infinite alternate',
+                        'pulse-glow': 'pulse-glow 6s ease-in-out infinite alternate',
                     },
                     keyframes: {
                         'gradient-x': {
@@ -38,8 +38,8 @@
                             '50%': { transform: 'translateY(-15px)' },
                         },
                         'pulse-glow': {
-                            '0%': { opacity: 0.6, transform: 'scale(0.95)' },
-                            '100%': { opacity: 1, transform: 'scale(1.05)' }
+                            '0%': { opacity: 0.6, transform: 'translate(-50%, -50%) scale(0.95)' },
+                            '100%': { opacity: 1, transform: 'translate(-50%, -50%) scale(1.05)' }
                         }
                     }
                 }
@@ -50,7 +50,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&display=swap');
         
-        html { scroll-behavior: smooth; }
         body { background-color: #030303; margin: 0; padding: 0; overflow-x: hidden; color: #d6d3cd; }
         
         @media (pointer: fine) { * { cursor: none !important; } }
@@ -64,20 +63,22 @@
             animation: gradient-x 6s linear infinite;
         }
 
+        /* Hero Eclipse Orb */
         .hero-eclipse {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 50vw; height: 50vw;
+            width: 45vw; height: 45vw;
             max-width: 600px; max-height: 600px;
-            background: radial-gradient(circle, rgba(207,169,74,0.15) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(207,169,74,0.18) 0%, rgba(0,0,0,0) 70%);
             border-radius: 50%;
-            box-shadow: 0 0 100px rgba(207,169,74,0.1), inset 0 0 60px rgba(207,169,74,0.05);
+            box-shadow: 0 0 100px rgba(207,169,74,0.12), inset 0 0 60px rgba(207,169,74,0.08);
             z-index: 0;
             pointer-events: none;
             animation: pulse-glow 6s infinite alternate ease-in-out;
         }
         
+        /* Glassmorphism */
         .glass-panel {
             background: rgba(15, 15, 15, 0.55);
             backdrop-filter: blur(20px);
@@ -94,6 +95,7 @@
         }
         @keyframes float-aurora { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, -50px) scale(1.2); } }
 
+        /* Liquid Button Hover */
         .liquid-btn {
             position: relative; overflow: hidden; transition: all 0.4s ease;
             z-index: 1; border-radius: 2px;
@@ -105,6 +107,13 @@
         }
         .liquid-btn:hover::before { left: 100%; }
         .liquid-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(207, 169, 74, 0.3); }
+
+        /* Ingredient Bubbles */
+        .ingredient-bubble {
+            opacity: 0; transform: translateY(20px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .group:hover .ingredient-bubble { opacity: 1; transform: translateY(0) scale(1); }
 
         .preserve-3d { transform-style: preserve-3d; }
         .transform-style-3d { transform-style: preserve-3d; }
@@ -118,16 +127,6 @@
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @keyframes float-up {
-            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { transform: translateY(-120px) scale(1.2) rotate(45deg); opacity: 0; }
-        }
-        .animate-float-1 { animation: float-up 5s ease-in-out infinite; }
-        .animate-float-2 { animation: float-up 6s ease-in-out infinite 1.5s; }
-        .animate-float-3 { animation: float-up 5.5s ease-in-out infinite 3s; }
     </style>
 </head>
 <body>
@@ -139,23 +138,25 @@
         // ==========================================
         // 1. CONFIGURATION & UTILS
         // ==========================================
-        const SHOPIFY_STORE_DOMAIN = "illumineire.myshopify.com"; 
+        const SHOPIFY_STORE_DOMAIN = "checkout.illumineire.com"; 
         const SHOPIFY_STOREFRONT_TOKEN = "09e58daacebce21a1b408124a0d09e2e";
         const WHATSAPP_LINK = "https://wa.me/923000000000";
 
         // Supabase Initialization
-        const supabaseUrl = 'https://txwtpulztbjmeejapcot.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3RwdWx6dGJqbWVlamFwY290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTE2MjYsImV4cCI6MjA5NTEyNzYyNn0.OZFWBrj_F_uggyDNi5m5Sv8nbveqAHvlbv9P5px8qyU';
-        
-        // Safe initialization: prevents global crash if URL is still a placeholder
-        const supabase = supabaseUrl.startsWith('http') 
-            ? window.supabase.createClient(supabaseUrl, supabaseAnonKey) 
-            : null;
+        const SUPABASE_URL = "https://txwtpulztbjmeejapcot.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3RwdWx6dGJqbWVlamFwY290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTE2MjYsImV4cCI6MjA5NTEyNzYyNn0.OZFWBrj_F_uggyDNi5m5Sv8nbveqAHvlbv9P5px8qyU";
+        let supabaseClient = null;
+        if (window.supabase && SUPABASE_URL.startsWith('http')) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
 
         function formatPrice(num) { return "Rs. " + num.toLocaleString(); }
         function generateOrderId() { return "ILM-" + Math.floor(1000 + Math.random() * 9000); }
         function generateReferralCode(name) { return `ILM-${name.substring(0,4).toUpperCase()}-${Math.floor(100+Math.random()*900)}`; }
 
+        // ==========================================
+        // 2. ICONS & EMBLEMS
+        // ==========================================
         function IconBase({ children, size = 24, className = "", onClick }) {
             return <svg onClick={onClick} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>;
         }
@@ -187,6 +188,9 @@
             );
         }
 
+        // ==========================================
+        // 3. DATA DEFINITIONS
+        // ==========================================
         const PRODUCTS = [
             { 
                 id: 'p1', slug: 'sunrise', name: 'Sunrise', sizes: ['100ml', '30ml', '10ml'], 
@@ -195,10 +199,10 @@
                 threeWords: 'Bright, Tropical, Playful.',
                 tagline: 'A vibrant, candy-sweet tropical dawn that jolts the senses awake and clears morning fog.', 
                 mood: 'Morning mist meets tropical candy.', 
-                occasion: 'Morning / vibrant', imageGlow: 'from-[#fef08a]', aura: 'Radiant',
+                occasion: 'Morning / vibrant', imageGlow: 'from-yellow-500/40', aura: 'Radiant',
                 pyramid: { top: 'Zesty Citrus Burst, Minted Air', heart: 'Ripe Tropical Fruit, Sweet Cream', base: 'Warm Vanilla, Soft Musk' },
                 performance: { projectionText: 'Heavy', longevitySkinText: '8-10 Hours', longevityClothesText: '18h+ clothes', projWidth: '85%', skinWidth: '70%', clothesWidth: '90%' },
-                aromatherapy: 'Awakening & Mental Clarity (10/10)',
+                aromatherapy: 'Awakening & Mental Clarity',
                 layering: 'Best pair: 3 AM Blues. 2 sprays Sunrise + 1 spray 3 AM Blues = "Dawn to Dusk". Bright start, smoky finish.',
                 howToWear: 'Spray 2-3 times on chest, neck, and wrists. Best for daytime, office, and warm weather. Light enough for close spaces but clean enough to get compliments. Reapply 1 spray after 6h if you want it to pop again.',
                 safety: '**Caution for Pregnancy & Children.** Peppermint oil should be used with caution during pregnancy and breastfeeding. It is also contraindicated for very young children (under 30 months) due to menthol content.',
@@ -211,10 +215,10 @@
                 threeWords: 'Crisp, Authoritative, Driven.',
                 tagline: 'An unshakable, sharp, and intensely professional aura engineered for peak mid-day productivity.', 
                 mood: 'Boardroom air + second-skin clean.', 
-                occasion: 'Daytime / active', imageGlow: 'from-[#f97316]', aura: 'Fresh',
+                occasion: 'Daytime / active', imageGlow: 'from-orange-500/40', aura: 'Fresh',
                 pyramid: { top: 'Sharp Citrus Spark, Green Herbs', heart: 'Crisp Air, Clean Skin', base: 'Smooth Musk, Woody Depth' },
                 performance: { projectionText: 'Enormous', longevitySkinText: '10-12 Hours', longevityClothesText: '20h+ clothes', projWidth: '95%', skinWidth: '85%', clothesWidth: '95%' },
-                aromatherapy: 'Focus & Mid-Day Invigoration (10/10)',
+                aromatherapy: 'Focus & Mid-Day Invigoration',
                 layering: 'Best pair: Midnight. 1 spray Noon + 2 sprays Midnight = "Sharp Stillness". Citrus authority crashes into tea + wood sanctuary.',
                 howToWear: 'Clean and warm for daily wear. 3 sprays in the morning on neck, chest, and wrist. Safe for meetings and public transport. If you want more presence, add 1 spray to your jacket collar.',
                 safety: '**Strictly Avoid if Pregnant or Epileptic.** Rosemary essential oil is highly stimulating. It is strictly contraindicated for pregnant women, individuals with epilepsy, and those with severe high blood pressure.',
@@ -227,10 +231,10 @@
                 threeWords: 'Wealthy, Glowing, Resinous.',
                 tagline: 'A flawlessly smooth, liquid-gold embrace that physically melts away the tension of a long workday.', 
                 mood: 'Liquid gold melting into skin.', 
-                occasion: 'Evening / dates', imageGlow: 'from-[#fb923c]', aura: 'Warm',
+                occasion: 'Evening / dates', imageGlow: 'from-[#d9772b]/40', aura: 'Warm',
                 pyramid: { top: 'Saffron Glow, Soft Spice', heart: 'Liquid Amber, Floral Whisper', base: 'Golden Resin, Creamy Woods' },
                 performance: { projectionText: 'Enormous', longevitySkinText: '12+ Hours', longevityClothesText: '24h+ clothes', projWidth: '100%', skinWidth: '95%', clothesWidth: '100%' },
-                aromatherapy: 'Winding Down & Tension Release (10/10)',
+                aromatherapy: 'Winding Down & Tension Release',
                 layering: 'Best pair: Sunrise. 2 sprays EVE + 1 spray Sunrise = "Golden Sunrise". Rich but playful. Day-to-night flex.',
                 howToWear: 'Spray 2 times on chest and 1 on back of neck. Evening and fall/winter only. Works best on skin and wool/cashmere. Avoid wearing to the gym or in 35°C+ heat.',
                 safety: '**First Trimester Caution.** While generally very safe, Lavender and Guaiac Wood are often advised to be avoided during the first trimester of pregnancy.',
@@ -243,10 +247,10 @@
                 threeWords: 'Moody, Sophisticated, Tranquil.',
                 tagline: 'A dark, aquatic transition scent that halts a racing mind and forces the muscular system to release tension.', 
                 mood: 'Midnight ocean + shadowed woods.', 
-                occasion: 'Evening / formal', imageGlow: 'from-[#c084fc]', aura: 'Enigmatic',
+                occasion: 'Evening / formal', imageGlow: 'from-red-900/40', aura: 'Enigmatic',
                 pyramid: { top: 'Cool Water Notes, Green Leaves', heart: 'Soft Incense, Crisp Air', base: 'Deep Woods, Skin Musk' },
                 performance: { projectionText: 'Moderate', longevitySkinText: '8-10 Hours', longevityClothesText: '24h+ clothes', projWidth: '70%', skinWidth: '80%', clothesWidth: '100%' },
-                aromatherapy: 'Deep Calm & Evening Rest (10/10)',
+                aromatherapy: 'Deep Calm & Evening Rest',
                 layering: 'Best pair: 3 AM Blues. 2 sprays Nightfall + 1 spray 3 AM Blues = "Smoked Ocean". Midnight dive bar by the sea.',
                 howToWear: 'Spray 2 sprays on chest and 1 on back of neck. Made for evenings, dates, and cooler weather. The sillage is strong, so keep it to 2 sprays max indoors. Let it sit 15min before going out.',
                 safety: '**Strictly Avoid During Pregnancy.** Clary Sage is a potent relaxant that can stimulate uterine contractions, making it strictly contraindicated for pregnant women.',
@@ -259,10 +263,10 @@
                 threeWords: 'Ancient, Meditative, Serene.',
                 tagline: 'A profoundly grounding sanctuary of dark woods and calming tea, built entirely to induce deep sleep.', 
                 mood: 'Temple at 3AM, wrapped in smoke.', 
-                occasion: 'Special occasions', imageGlow: 'from-stone-800', aura: 'Opulent',
+                occasion: 'Special occasions', imageGlow: 'from-purple-900/40', aura: 'Opulent',
                 pyramid: { top: 'Steamed Tea Leaf, Soft Air', heart: 'Sacred Wood, Warm Resin', base: 'Earthy Root, Smoky Depth' },
                 performance: { projectionText: 'Intimate to Moderate', longevitySkinText: '10+ Hours', longevityClothesText: '36h+ clothes', projWidth: '60%', skinWidth: '95%', clothesWidth: '100%' },
-                aromatherapy: 'Sleep Aid & Meditative Peace (10/10)',
+                aromatherapy: 'Sleep Aid & Meditative Peace',
                 layering: 'Best pair: Noon. 2 sprays Midnight + 1 spray Noon = "Meditative Edge". Monk with a knife. Peaceful but alert.',
                 howToWear: 'Spray 2 sprays on chest and 1 on shirt collar. Best for night, formal events, and cold/dry weather. The wet forest vibe is strongest in cool air. Let it dry down 20min before judging.',
                 safety: '**General Pregnancy Caution.** Frankincense and Vetiver are among the safest essential oils, but standard medical advice recommends consulting a physician before use during pregnancy.',
@@ -275,10 +279,10 @@
                 threeWords: 'Intoxicating, Comforting, Nostalgic.',
                 tagline: 'An emotional, aromatic hug of dark coffee and spiced vanilla that combats isolation and late-night anxiety.', 
                 mood: 'Coffee shop at midnight, wrapped in velvet.', 
-                occasion: 'Late night / intimate', imageGlow: 'from-blue-800', aura: 'Serene',
+                occasion: 'Late night / intimate', imageGlow: 'from-blue-900/40', aura: 'Serene',
                 pyramid: { top: 'Bitter Coffee Bean, Bright Citrus', heart: 'Spiced Rose, Dark Vanilla', base: 'Aged Tobacco, Sweet Musk' },
                 performance: { projectionText: 'Heavy', longevitySkinText: '14+ Hours', longevityClothesText: '24h+ clothes', projWidth: '85%', skinWidth: '100%', clothesWidth: '100%' },
-                aromatherapy: 'Emotional Comfort & Soothing Anxiety (10/10)',
+                aromatherapy: 'Emotional Comfort & Soothing Anxiety',
                 layering: 'Best pair: EVE. 1 spray 3 AM Blues + 2 sprays EVE = "Velvet Resin". Cashmere blanket + espresso shot.',
                 howToWear: 'Late night and cold-weather scent only. 1-2 sprays max to neck and jacket cuff. Smoky and sweet, it needs body heat to open up. Keep it off during the day.',
                 safety: '**Scent Sensitivity.** Ylang-Ylang is incredibly rich and potent. While excellent for anxiety, over-application can trigger headaches or nausea in highly scent-sensitive individuals.',
@@ -333,124 +337,6 @@
             );
         }
 
-        function TiltCard({ product, navigateTo }) {
-            const cardRef = useRef();
-            const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
-            
-            const handleMouseMove = (e) => {
-                if (window.matchMedia("(pointer: coarse)").matches) return; 
-                if (!cardRef.current) return;
-                const rect = cardRef.current.getBoundingClientRect();
-                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                const centerX = rect.width / 2; const centerY = rect.height / 2;
-                setTilt({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15, glareX: (x / rect.width) * 100, glareY: (y / rect.height) * 100 });
-            };
-
-            return (
-                <div ref={cardRef} className="perspective-[1500px] cursor-pointer group w-full" onMouseMove={handleMouseMove} onMouseLeave={() => setTilt({ x: 0, y: 0, glareX: 50, glareY: 50 })} onClick={() => navigateTo(`product/${product.slug}`)}>
-                    <div className="glass-panel flex flex-col md:flex-row transition-all duration-300 ease-out preserve-3d h-auto md:h-[400px] rounded-xl overflow-hidden" style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.02, 1.02, 1.02)` }}>
-                        <div className="absolute inset-0 z-50 pointer-events-none transition-opacity duration-300 hidden md:block" style={{ background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)`, opacity: (tilt.x || tilt.y) ? 1 : 0 }} />
-
-                        <div className={`h-80 md:h-full w-full md:w-1/2 relative overflow-hidden bg-gradient-to-b ${product.imageGlow} to-black/60 flex items-center justify-center p-8 transform-style-3d`}>
-                            {product.photoshoot ? (
-                                <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity"><Slideshow images={product.photoshoot} /><div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" /></div>
-                            ) : (
-                                <div className="absolute inset-0 bg-black/40" />
-                            )}
-                            
-                            {/* Vertical Ingredients List */}
-                            {product.ingredients && (
-                                <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col gap-6">
-                                    <div className="absolute left-7 md:left-8 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
-                                    {product.ingredients.map((imgUrl, idx) => {
-                                        const isPng = imgUrl.endsWith('.png');
-                                        return (
-                                            <div key={idx} className="glass-panel w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] relative z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ transitionDelay: `${idx * 100}ms` }}>
-                                                <img src={imgUrl} className={`w-2/3 h-2/3 ${isPng ? 'object-contain' : 'object-cover rounded-full hd-bottle'}`} alt="Ingredient" />
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                             )}
-
-                            {product.bottleImage ? (
-                                <div className="relative z-20 w-48 h-64 md:w-72 md:h-96 flex flex-col items-center justify-end transition-transform duration-300 ease-out" style={{ transform: (tilt.x || tilt.y) ? 'translateZ(70px)' : 'translateZ(0px)' }}>
-                                    <img src={product.bottleImage} alt={product.name} className="w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] scale-[1.15] hd-bottle" />
-                                </div>
-                            ) : (
-                                <div className="relative z-20 w-24 h-36 flex flex-col items-center justify-end drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out" style={{ transform: (tilt.x || tilt.y) ? 'translateZ(70px)' : 'translateZ(0px)' }}>
-                                    <div className="w-8 h-10 bg-gradient-to-r from-stone-400 via-[#CFA94A] to-stone-600 rounded-t-sm shadow-inner z-20" />
-                                    <div className="w-10 h-2 bg-gradient-to-r from-stone-500 to-stone-700 rounded-sm z-20" />
-                                    <div className="w-24 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative overflow-hidden shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
-                                        <div className={`absolute bottom-0 w-full h-3/4 bg-gradient-to-b ${product.imageGlow} to-transparent opacity-60`} />
-                                        <div className="relative z-10 border border-[#CFA94A]/40 px-3 py-4 bg-black/40 backdrop-blur-md">
-                                            <div className="text-[6px] uppercase tracking-[0.2em] text-[#CFA94A] text-center font-cinzel leading-tight">ILLUMINEIRE<br/><span className="text-[4px] text-stone-400 font-sans tracking-widest">{product.name}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="p-8 flex-1 flex flex-col justify-center relative z-20 bg-[#161616]/90">
-                            <h3 className="text-3xl text-[#CFA94A] mb-1 tracking-wide font-cinzel">{product.name}</h3>
-                            <p className="text-[10px] uppercase tracking-widest text-[#CFA94A]/70 mb-4 font-sans font-bold">{product.threeWords}</p>
-                            <div className="flex gap-2 mb-4">{product.sizes && product.sizes.map(s => <span key={s} className="px-2 py-1 text-[8px] uppercase tracking-widest border border-[#CFA94A]/40 text-[#CFA94A] bg-[#CFA94A]/10 rounded-sm">{s}</span>)}</div>
-                            <p className="text-sm text-stone-400 italic mb-8 font-sans leading-relaxed">{product.tagline}</p>
-                            
-                            <div className="space-y-4 mb-10 font-sans flex-1">
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">PROJECTION</p><p className="text-xs text-stone-300 font-bold">{product.performance.projectionText}</p></div>
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">LONGEVITY</p><p className="text-xs text-stone-300 font-bold">{product.performance.longevitySkinText}</p></div>
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">AROMATHERAPY GOAL</p><p className="text-xs text-stone-300">{product.aromatherapy}</p></div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-3 font-sans text-[9px] uppercase tracking-widest font-semibold mt-auto">
-                                <button className="liquid-btn flex-1 bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 shadow-[0_0_15px_rgba(207,169,74,0.3)]">EXPLORE DETAIL</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function Reveal({ children, delay = 0 }) {
-            const [isVisible, setIsVisible] = useState(false);
-            const domRef = useRef();
-            useEffect(() => {
-                const observer = new IntersectionObserver(entries => { entries.forEach(entry => { if (entry.isIntersecting) { setTimeout(() => setIsVisible(true), delay); observer.unobserve(entry.target); } }); }, { threshold: 0.1 });
-                if (domRef.current) observer.observe(domRef.current);
-                return () => observer.disconnect();
-            }, [delay]);
-            return <div ref={domRef} className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`}>{children}</div>;
-        }
-
-        function Accordion({ title, children }) {
-            const [isOpen, setIsOpen] = useState(false);
-            return (
-                <div className="border-b border-stone-800 py-4 font-sans">
-                    <button onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center w-full text-left font-bold text-[#CFA94A] uppercase tracking-widest text-[10px] hover:text-white transition-colors">
-                        {title} <span className="text-sm font-light">{isOpen ? '−' : '+'}</span>
-                    </button>
-                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[800px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}><div className="text-sm text-stone-400 font-light leading-relaxed pt-2 pb-4">{children}</div></div>
-                </div>
-            )
-        }
-
-        function Slideshow({ images, className = "" }) {
-            const [currentIndex, setCurrentIndex] = useState(0);
-            useEffect(() => {
-                if (!images || images.length === 0) return;
-                const timer = setInterval(() => setCurrentIndex((prev) => (prev + 1) % images.length), 3500);
-                return () => clearInterval(timer);
-            }, [images]);
-            if (!images) return null;
-            return (
-                <div className={`relative w-full h-full overflow-hidden ${className}`}>
-                    {images.map((img, idx) => (
-                        <img key={idx} src={img} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} alt="Photoshoot" />
-                    ))}
-                </div>
-            );
-        }
-
         function CustomCursor() {
             const cursorRef = useRef(null);
             useEffect(() => {
@@ -495,8 +381,126 @@
             return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-50" />;
         }
 
+        function Reveal({ children, delay = 0 }) {
+            const [isVisible, setIsVisible] = useState(false);
+            const domRef = useRef();
+            useEffect(() => {
+                const observer = new IntersectionObserver(entries => { entries.forEach(entry => { if (entry.isIntersecting) { setTimeout(() => setIsVisible(true), delay); observer.unobserve(entry.target); } }); }, { threshold: 0.1 });
+                if (domRef.current) observer.observe(domRef.current);
+                return () => observer.disconnect();
+            }, [delay]);
+            return <div ref={domRef} className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`}>{children}</div>;
+        }
+
+        function Accordion({ title, children }) {
+            const [isOpen, setIsOpen] = useState(false);
+            return (
+                <div className="border-b border-stone-800 py-4 font-sans">
+                    <button onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center w-full text-left font-bold text-[#CFA94A] uppercase tracking-widest text-[10px] hover:text-white transition-colors">
+                        {title} <span className="text-sm font-light">{isOpen ? '−' : '+'}</span>
+                    </button>
+                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[800px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}><div className="text-sm text-stone-400 font-light leading-relaxed pt-2 pb-4">{children}</div></div>
+                </div>
+            )
+        }
+
+        function Slideshow({ images, className = "" }) {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            useEffect(() => {
+                if (!images || images.length === 0) return;
+                const timer = setInterval(() => setCurrentIndex((prev) => (prev + 1) % images.length), 3500);
+                return () => clearInterval(timer);
+            }, [images]);
+            if (!images) return null;
+            return (
+                <div className={`relative w-full h-full overflow-hidden ${className}`}>
+                    {images.map((img, idx) => (
+                        <img key={idx} src={img} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} alt="Photoshoot" />
+                    ))}
+                </div>
+            );
+        }
+
+        function TiltCard({ product, navigateTo }) {
+            const cardRef = useRef();
+            const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
+            const [isHovered, setIsHovered] = useState(false);
+            
+            const handleMouseMove = (e) => {
+                if (window.matchMedia("(pointer: coarse)").matches) return; 
+                if (!cardRef.current) return;
+                const rect = cardRef.current.getBoundingClientRect();
+                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                const centerX = rect.width / 2; const centerY = rect.height / 2;
+                setTilt({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15, glareX: (x / rect.width) * 100, glareY: (y / rect.height) * 100 });
+            };
+
+            return (
+                <div ref={cardRef} className="perspective-[1500px] cursor-pointer group w-full" onMouseMove={handleMouseMove} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setTilt({ x: 0, y: 0, glareX: 50, glareY: 50 }); }} onClick={() => navigateTo(`product/${product.slug}`)}>
+                    <div className="glass-panel flex flex-col md:flex-row transition-all duration-300 ease-out preserve-3d h-auto md:h-[400px] rounded-xl overflow-hidden" style={{ transform: isHovered ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.02, 1.02, 1.02)` : 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)' }}>
+                        <div className="absolute inset-0 z-50 pointer-events-none transition-opacity duration-300 hidden md:block" style={{ background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)`, opacity: isHovered ? 1 : 0 }} />
+
+                        <div className={`h-80 md:h-full w-full md:w-1/2 relative overflow-hidden bg-gradient-to-b ${product.imageGlow} to-black/60 flex items-center justify-center p-8 transform-style-3d`}>
+                            {product.photoshoot ? (
+                                <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity"><Slideshow images={product.photoshoot} /><div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" /></div>
+                            ) : (
+                                <div className="absolute inset-0 bg-black/40" />
+                            )}
+                            
+                            {/* Trendy Ingredient Bubble Float */}
+                            {product.ingredients && isHovered && (
+                                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                                    {product.ingredients.map((imgUrl, idx) => {
+                                        const isPng = imgUrl.endsWith('.png');
+                                        const positions = ['left-[5%] bottom-10', 'right-[5%] bottom-20', 'left-[35%] bottom-0', 'left-[15%] bottom-24', 'right-[25%] bottom-10'];
+                                        const animations = ['animate-float-1', 'animate-float-2', 'animate-float-3', 'animate-float-1', 'animate-float-2'];
+                                        return (
+                                            <img key={idx} src={imgUrl} className={`absolute ${positions[idx % positions.length]} ${animations[idx % animations.length]} ${isPng ? 'w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]' : 'w-14 h-14 md:w-20 md:h-20 object-cover rounded-full shadow-[0_0_25px_rgba(207,169,74,0.4)] border border-[#CFA94A]/30'} transition-all`} alt="Ingredient Note" />
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {product.bottleImage ? (
+                                <div className="relative z-20 w-48 h-64 md:w-72 md:h-96 flex flex-col items-center justify-end transition-transform duration-300 ease-out" style={{ transform: isHovered ? 'translateZ(70px)' : 'translateZ(0px)' }}>
+                                    <img src={product.bottleImage} alt={product.name} className={`w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] hd-bottle ${product.slug === 'sunrise' ? 'scale-75' : 'scale-[1.15]'}`} />
+                                </div>
+                            ) : (
+                                <div className="relative z-20 w-24 h-36 flex flex-col items-center justify-end drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out" style={{ transform: isHovered ? 'translateZ(70px)' : 'translateZ(0px)' }}>
+                                    <div className="w-8 h-10 bg-gradient-to-r from-stone-400 via-[#CFA94A] to-stone-600 rounded-t-sm shadow-inner z-20" />
+                                    <div className="w-10 h-2 bg-gradient-to-r from-stone-500 to-stone-700 rounded-sm z-20" />
+                                    <div className="w-24 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative overflow-hidden shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
+                                        <div className={`absolute bottom-0 w-full h-3/4 bg-gradient-to-b ${product.imageGlow} to-transparent opacity-60`} />
+                                        <div className="relative z-10 border border-[#CFA94A]/40 px-3 py-4 bg-black/40 backdrop-blur-md">
+                                            <div className="text-[6px] uppercase tracking-[0.2em] text-[#CFA94A] text-center font-cinzel leading-tight">ILLUMINEIRE<br/><span className="text-[4px] text-stone-400 font-sans tracking-widest">{product.name}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="p-8 flex-1 flex flex-col justify-center relative z-20 bg-[#161616]/90">
+                            <h3 className="text-3xl text-[#CFA94A] mb-1 tracking-wide font-cinzel">{product.name}</h3>
+                            <p className="text-[10px] uppercase tracking-widest text-[#CFA94A]/70 mb-4 font-sans font-bold">{product.threeWords}</p>
+                            <div className="flex gap-2 mb-4">{product.sizes && product.sizes.map(s => <span key={s} className="px-2 py-1 text-[8px] uppercase tracking-widest border border-[#CFA94A]/40 text-[#CFA94A] bg-[#CFA94A]/10 rounded-sm">{s}</span>)}</div>
+                            <p className="text-sm text-stone-400 italic mb-8 font-sans leading-relaxed">{product.tagline}</p>
+                            
+                            <div className="space-y-4 mb-10 font-sans flex-1">
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">PROJECTION</p><p className="text-xs text-stone-300 font-bold">{product.performance.projectionText}</p></div>
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">LONGEVITY</p><p className="text-xs text-stone-300 font-bold">{product.performance.longevitySkinText}</p></div>
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">AROMATHERAPY GOAL</p><p className="text-xs text-stone-300">{product.aromatherapy}</p></div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3 font-sans text-[9px] uppercase tracking-widest font-semibold mt-auto">
+                                <button className="liquid-btn flex-1 bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 shadow-[0_0_15px_rgba(207,169,74,0.3)]">EXPLORE DETAIL</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // ==========================================
-        // 5. PAGE COMPONENTS
+        // 5. PAGE ROUTE COMPONENTS
         // ==========================================
         function HomePage({ navigateTo }) {
             const [activeSlug, setActiveSlug] = useState(PRODUCTS[0].slug);
@@ -543,7 +547,7 @@
                                 <div className="w-2 h-2 bg-[#CFA94A] rounded-full mb-2 shadow-[0_0_20px_rgba(207,169,74,1)] animate-pulse" />
                                 <p className="text-[10px] uppercase tracking-[0.4em] text-[#CFA94A]/80 mb-6 font-sans font-semibold">PAKISTAN • EST. MMXXVI</p>
                                 
-                                <h1 className="text-6xl md:text-8xl lg:text-[10rem] tracking-[0.1em] text-[#CFA94A] mb-4 drop-shadow-[0_0_25px_rgba(207,169,74,0.4)] font-cinzel reflective-text leading-none">
+                                <h1 className="text-4xl lg:text-6xl tracking-[0.1em] text-[#CFA94A] mb-4 drop-shadow-[0_0_25px_rgba(207,169,74,0.4)] font-cinzel reflective-text leading-none">
                                     ILLUMINEIRE
                                 </h1>
                                 
@@ -607,7 +611,7 @@
                             </div>
                             
                             <div className="relative w-full max-w-7xl mx-auto z-10 px-4">
-                                <button onClick={scrollLeft} className="absolute left-2 md:-left-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowLeftIcon size={24}/></button>
+                                <button onClick={scrollLeft} className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowLeftIcon size={24}/></button>
                                 
                                 <div ref={scrollRef} onScroll={handleScroll} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-8 pb-12 pt-4 px-[10vw]">
                                     {PRODUCTS.map((product) => (
@@ -615,7 +619,7 @@
                                             <div className="glass-panel p-6 cursor-pointer group flex flex-col items-center h-[420px] relative overflow-hidden rounded-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(207,169,74,0.2)] border border-stone-800 hover:border-[#CFA94A]/40" onClick={() => navigateTo(`product/${product.slug}`)}>
                                                 <div className="h-56 flex items-center justify-center mb-6 relative z-10 w-full">
                                                     {product.bottleImage ? (
-                                                        <img src={product.bottleImage} alt={product.name} className="h-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-700 hd-bottle" />
+                                                        <img src={product.bottleImage} alt={product.name} className={`h-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-700 hd-bottle ${product.slug === 'sunrise' ? 'scale-75 group-hover:scale-90' : ''}`} />
                                                     ) : (
                                                         <div className="w-20 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm shadow-[inset_0_0_20px_rgba(207,169,74,0.1)] group-hover:scale-110 transition-transform duration-700"><span className="text-[5px] uppercase tracking-widest text-[#CFA94A] text-center font-cinzel">{product.name}</span></div>
                                                     )}
@@ -630,7 +634,7 @@
                                     ))}
                                 </div>
 
-                                <button onClick={scrollRight} className="absolute right-2 md:-right-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowRightIcon size={24}/></button>
+                                <button onClick={scrollRight} className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowRightIcon size={24}/></button>
                             </div>
                             
                             <div className="text-center mt-8 relative z-10">
@@ -722,7 +726,7 @@
                                         <div className="w-full md:w-1/2 flex justify-center items-center relative h-96 cursor-pointer" onClick={() => navigateTo(`product/${product.slug}`)}>
                                             <div className="absolute inset-0 bg-black/40 glass-panel rounded-2xl -z-10" />
                                             {product.bottleImage ? (
-                                                <img src={product.bottleImage} alt={product.name} className="h-[120%] object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] animate-float-soft hd-bottle" />
+                                                <img src={product.bottleImage} alt={product.name} className={`h-[120%] object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] animate-float-soft hd-bottle ${product.slug === 'sunrise' ? 'scale-75' : ''}`} />
                                             ) : (
                                                 <div className="w-32 h-44 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm shadow-[inset_0_0_20px_rgba(207,169,74,0.1)] animate-float-soft">
                                                     <span className="text-[8px] uppercase tracking-widest text-[#CFA94A] text-center font-cinzel">{product.name}</span>
@@ -781,24 +785,9 @@
                                     )}
                                 </div>
 
-                                {/* Vertical Ingredients List (Left Edge) */}
-                                {product.ingredients && (
-                                    <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col gap-6">
-                                        <div className="absolute left-7 md:left-8 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
-                                        {product.ingredients.map((imgUrl, idx) => {
-                                            const isPng = imgUrl.endsWith('.png');
-                                            return (
-                                                <div key={idx} className="glass-panel w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-float-soft relative z-30" style={{ animationDelay: `${idx * 0.4}s` }}>
-                                                    <img src={imgUrl} className={`w-2/3 h-2/3 ${isPng ? 'object-contain' : 'object-cover rounded-full hd-bottle'}`} alt="Ingredient" />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
                                 <div className="w-full max-w-[500px] aspect-[3/4] flex items-center justify-center relative z-20 pointer-events-none">
                                     {product.bottleImage ? (
-                                        <img src={product.bottleImage} alt={product.name} className="w-[85%] h-[85%] md:w-[95%] md:h-[95%] object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.8)] animate-float-soft hd-bottle" />
+                                        <img src={product.bottleImage} alt={product.name} className={`w-[130%] h-[130%] md:w-[140%] md:h-[140%] ${product.slug === 'sunrise' ? 'md:w-[55%] md:h-[55%]' : ''} object-contain drop-shadow-[0_40px_50px_rgba(0,0,0,0.95)] animate-float-soft hd-bottle ${product.slug === 'sunrise' ? 'scale-[25%]' : 'scale-110'}`} />
                                     ) : (
                                         <div className="text-center glass-panel p-8 absolute bottom-20 rounded-xl">
                                             <p className="text-[10px] tracking-[0.4em] uppercase text-[#CFA94A] mb-2 font-cinzel">ILLUMINEIRE</p>
@@ -806,6 +795,21 @@
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Vertical Ingredients List (Left Edge) */}
+                                {product.ingredients && (
+                                    <div className="absolute left-0 md:left-4 top-1/2 -translate-y-1/2 flex flex-col gap-6 z-30 pointer-events-none">
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
+                                        {product.ingredients.map((imgUrl, idx) => {
+                                            const isPng = imgUrl.endsWith('.png');
+                                            return (
+                                                <div key={idx} className="glass-panel w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center border border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] relative z-30 animate-float-soft" style={{ animationDelay: `${idx * 0.4}s` }}>
+                                                    <img src={imgUrl} className={`w-2/3 h-2/3 ${isPng ? 'object-contain' : 'object-cover rounded-full hd-bottle'}`} alt="Ingredient" />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Performance Bars - Moved under photoshoot to balance columns */}
@@ -1042,7 +1046,7 @@
                                         <div key={i} className={`absolute transition-transform duration-700 ease-out`} 
                                              style={{ transform: `translateX(${i * 40 - (bundle.products.length * 20)}px) scale(${1 - (i * 0.1)})`, zIndex: bundle.products.length - i }}>
                                             {p.bottleImage ? (
-                                                <img src={p.bottleImage} className="w-40 h-56 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.9)] group-hover:scale-110 transition-transform duration-500 hd-bottle" />
+                                                <img src={p.bottleImage} className={`w-40 h-56 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.9)] group-hover:scale-110 transition-transform duration-500 hd-bottle ${p.slug === 'sunrise' ? 'scale-75 group-hover:scale-90' : ''}`} />
                                             ) : (
                                                 <div className="w-24 h-36 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
                                                     <div className="absolute inset-0 bg-black/60" />
@@ -1306,7 +1310,7 @@
                                     <div key={index} className="flex gap-4 border-b border-white/5 pb-6">
                                         <div className="w-20 h-24 bg-gradient-to-b from-stone-800 to-black border border-white/10 flex items-center justify-center shrink-0 p-2 overflow-hidden rounded-sm">
                                             {item.product.bottleImage ? (
-                                                <img src={item.product.bottleImage} className="w-full h-full object-contain drop-shadow-md hd-bottle" />
+                                                <img src={item.product.bottleImage} className={`w-full h-full object-contain drop-shadow-md hd-bottle ${item.product.slug === 'sunrise' ? 'scale-75' : ''}`} />
                                             ) : (
                                                 <span className="text-[6px] text-[#CFA94A] font-cinzel uppercase text-center leading-tight">ILLUMINEIRE<br/>{item.product.name}</span>
                                             )}
@@ -1372,7 +1376,7 @@
                 return (
                     <div className="min-h-screen pt-40 pb-24 flex flex-col items-center text-center px-6">
                         <h1 className="text-3xl font-cinzel text-[#CFA94A] mb-4">Your bag is empty</h1>
-                        <button onClick={() => navigateTo('home')} className="text-[10px] uppercase tracking-widest text-stone-300 border-b border-[#CFA94A] pb-1 hover:text-white">Return to Collection</button>
+                        <button onClick={() => navigateTo('catalog')} className="text-[10px] uppercase tracking-widest text-stone-300 border-b border-[#CFA94A] pb-1 hover:text-white">Return to Collection</button>
                     </div>
                 );
             }
@@ -1509,77 +1513,67 @@
 
         function UserDashboard({ navigateTo, user, setUser, orders }) {
             const [activeTab, setActiveTab] = useState('overview');
+            const [isLoginMode, setIsLoginMode] = useState(true);
             const [loginInput, setLoginInput] = useState('');
             const [emailInput, setEmailInput] = useState('');
             const [passwordInput, setPasswordInput] = useState('');
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [authError, setAuthError] = useState('');
 
-            useEffect(() => { window.scrollTo(0,0); }, []);
+            useEffect(() => { 
+                window.scrollTo(0,0); 
+                const savedUser = localStorage.getItem('illumineire_user');
+                if (savedUser && !user) {
+                    setUser(JSON.parse(savedUser));
+                }
+            }, []);
 
-            const handleLogin = async (e) => {
+            useEffect(() => {
+                if (user) {
+                    localStorage.setItem('illumineire_user', JSON.stringify(user));
+                } else {
+                    localStorage.removeItem('illumineire_user');
+                }
+            }, [user]);
+
+            const handleAuth = async (e) => {
                 e.preventDefault();
                 setAuthError('');
-                setIsSubmitting(true);
                 
+                const emailRegex = /^[^\s@]+@gmail\.com$/i;
+                if (!emailRegex.test(emailInput)) { setAuthError('Only @gmail.com addresses are permitted.'); return; }
+                if (passwordInput.length < 6) { setAuthError('Password must be at least 6 characters.'); return; }
+
+                setIsSubmitting(true);
+
+                if (!supabaseClient) {
+                    console.log("Supabase Offline. Simulating login/signup...");
+                    setTimeout(() => {
+                        setUser({ name: loginInput || 'Guest', email: emailInput, points: 0, totalSpent: 0, referralCode: generateReferralCode(loginInput || 'GST') });
+                        setIsSubmitting(false);
+                    }, 800);
+                    return;
+                }
+
                 try {
-                    if (!supabase) throw new Error("API_OFFLINE");
-
-                    // SUPABASE LOGIN LOGIC
-                    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-                        email: emailInput,
-                        password: passwordInput,
-                    });
-
-                    // If user doesn't exist, sign them up
-                    if (authError && authError.message.includes("Invalid login credentials")) {
-                        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                            email: emailInput,
-                            password: passwordInput,
-                        });
-
-                        if (signUpError) throw signUpError;
-
-                        // Create profile in Database
-                        const referral = generateReferralCode(loginInput);
-                        const { error: profileError } = await supabase.from('profiles').insert([
-                            { id: signUpData.user.id, name: loginInput, email: emailInput, referral_code: referral }
-                        ]);
+                    if (isLoginMode) {
+                        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailInput, password: passwordInput });
+                        if (error) throw error;
                         
-                        if(profileError) throw profileError;
-                        
-                        setUser({ name: loginInput, email: emailInput, points: 0, totalSpent: 0, referralCode: referral });
-
-                    } else if (authError) {
-                        throw authError;
+                        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
+                        setUser({ name: profile?.name || 'Guest', email: data.user.email, points: profile?.points || 0, totalSpent: profile?.total_spent || 0, referralCode: profile?.referral_code || '' });
                     } else {
-                        // User logged in, fetch their profile data
-                        const { data: profile } = await supabase
-                            .from('profiles')
-                            .select('*')
-                            .eq('id', authData.user.id)
-                            .single();
-                            
-                        setUser({ 
-                            name: profile?.name || loginInput, 
-                            email: profile?.email || emailInput, 
-                            points: profile?.points || 0, 
-                            totalSpent: profile?.total_spent || 0, 
-                            referralCode: profile?.referral_code || '' 
-                        });
+                        if (!loginInput.trim()) { throw new Error("Name is required for signup."); }
+                        const { data, error } = await supabaseClient.auth.signUp({ email: emailInput, password: passwordInput });
+                        if (error) throw error;
+
+                        const newReferral = generateReferralCode(loginInput);
+                        await supabaseClient.from('profiles').insert([{ id: data.user.id, name: loginInput, email: emailInput, referral_code: newReferral }]);
+                        
+                        setUser({ name: loginInput, email: emailInput, points: 0, totalSpent: 0, referralCode: newReferral });
                     }
                 } catch(err) {
-                    console.error("Supabase Error:", err.message);
-                    
-                    if (err.message !== "API_OFFLINE") {
-                        setAuthError(err.message || "Authentication failed. Please verify your Supabase URL and Keys.");
-                    }
-                    
-                    // FALLBACK: Local Simulation if Supabase is offline/missing keys
-                    setTimeout(() => {
-                        setUser({ name: loginInput, email: emailInput, points: 0, totalSpent: 0, referralCode: generateReferralCode(loginInput) });
-                        setIsSubmitting(false);
-                    }, 1000);
+                    setAuthError(err.message || 'Authentication failed.');
                 }
                 setIsSubmitting(false);
             };
@@ -1591,14 +1585,20 @@
                             <div className="aurora-bg top-[-50px] right-[-50px] opacity-50"></div>
                             <div className="relative z-10 text-center mb-10">
                                 <BrandLogo className="w-12 h-12 text-[#CFA94A] mx-auto mb-6" />
-                                <h2 className="text-2xl font-cinzel text-white tracking-widest">The Atelier</h2>
+                                <h2 className="text-2xl font-cinzel text-white tracking-widest">{isLoginMode ? 'Access Atelier' : 'Join Society'}</h2>
                                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#CFA94A] mt-2 font-sans font-bold">Luminous Society Portal</p>
                             </div>
-                            <form onSubmit={handleLogin} className="relative z-10 space-y-4 font-sans">
-                                <div>
-                                    <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Name</label>
-                                    <input type="text" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} placeholder="Enter your full name" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required />
-                                </div>
+                            <div className="flex mb-6 border-b border-stone-800 relative z-10 font-sans">
+                                <button onClick={() => {setIsLoginMode(true); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-colors ${isLoginMode ? 'text-[#CFA94A] border-b-2 border-[#CFA94A]' : 'text-stone-500'}`}>Sign In</button>
+                                <button onClick={() => {setIsLoginMode(false); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-colors ${!isLoginMode ? 'text-[#CFA94A] border-b-2 border-[#CFA94A]' : 'text-stone-500'}`}>Create Account</button>
+                            </div>
+                            <form onSubmit={handleAuth} className="relative z-10 space-y-4 font-sans">
+                                {!isLoginMode && (
+                                    <div className="animate-in slide-in-from-top-4 duration-300">
+                                        <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Full Name</label>
+                                        <input type="text" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} placeholder="Enter your full name" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required={!isLoginMode} />
+                                    </div>
+                                )}
                                 <div>
                                     <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Email Address</label>
                                     <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="you@gmail.com" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required />
@@ -1609,7 +1609,7 @@
                                 </div>
                                 {authError && <p className="text-red-500 text-[10px] uppercase tracking-widest pt-2">{authError}</p>}
                                 <button disabled={isSubmitting} type="submit" className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 mt-2 text-[10px] uppercase tracking-widest font-bold shadow-lg disabled:opacity-50 rounded-md">
-                                    {isSubmitting ? 'Authenticating...' : 'Enter Atelier'}
+                                    {isSubmitting ? 'Authenticating...' : (isLoginMode ? 'Enter Atelier' : 'Join Society')}
                                 </button>
                             </form>
                         </div>
@@ -1637,7 +1637,7 @@
                                     </button>
                                 ))}
                             </div>
-                            <button onClick={() => setUser(null)} className="mt-auto pt-8 flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest text-stone-600 hover:text-red-500 transition-colors">Sign Out</button>
+                            <button onClick={async () => { if (supabaseClient) await supabaseClient.auth.signOut(); setUser(null); }} className="mt-auto pt-8 flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest text-stone-600 hover:text-red-500 transition-colors">Sign Out</button>
                         </div>
 
                         <div className="flex-1 glass-panel p-8 md:p-12 animate-in fade-in duration-500 min-h-[500px] rounded-xl overflow-hidden">
@@ -1741,7 +1741,7 @@
         }
 
         // ==========================================
-        // 6. MAIN APP ORCHESTRATOR
+        // 7. APP WRAPPER
         // ==========================================
         function App() {
             const [view, setView] = useState('home');
@@ -1759,8 +1759,26 @@
             const [localCheckoutFallbackData, setLocalCheckoutFallbackData] = useState(null);
             
             const [isTouchDevice, setIsTouchDevice] = useState(false);
+            const scrollContainerRef = useRef(null);
 
             const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
+
+            // Fetch initial state safely
+            useEffect(() => {
+                try {
+                    const savedUser = localStorage.getItem('illumineire_user');
+                    if (savedUser) setCurrentUser(JSON.parse(savedUser));
+                    const savedOrders = localStorage.getItem('illumineire_orders');
+                    if (savedOrders) setOrders(JSON.parse(savedOrders));
+                } catch(e) {}
+            }, []);
+
+            // Save state to local storage
+            useEffect(() => {
+                if (currentUser) localStorage.setItem('illumineire_user', JSON.stringify(currentUser));
+                else localStorage.removeItem('illumineire_user');
+                localStorage.setItem('illumineire_orders', JSON.stringify(orders));
+            }, [currentUser, orders]);
 
             const addToCart = (product, size) => {
                 setCartItems(prev => {
@@ -1793,7 +1811,7 @@
                 }
 
                 const lineItems = cartItems.map(item => ({
-                    variantId: item.product.shopifyVariantIds?.[item.size] || "gid://shopify/ProductVariant/MOCK_ID",
+                    merchandiseId: item.product.shopifyVariantIds?.[item.size] || "gid://shopify/ProductVariant/MOCK_ID",
                     quantity: item.qty
                 }));
 
