@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct for your project structure
+import { supabase } from '../supabase'; // Make sure this path is correct for your project structure
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
