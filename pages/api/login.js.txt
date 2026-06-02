@@ -1,0 +1,74 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Securely connect to your Supabase Database
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
+
+    const { email, password, name } = req.body;
+
+    // 1. Attempt to Sign In
+    let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    // 2. If the user doesn't exist, automatically Sign Them Up!
+    if (authError && authError.message.includes("Invalid login credentials")) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+        });
+
+        if (signUpError) {
+            return res.status(401).json({ success: false, message: signUpError.message });
+        }
+
+        authData = signUpData;
+        
+        // Create their public profile & generate Referral Code
+        const referral = `ILM-${name.substring(0,4).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+        await supabase.from('profiles').insert([
+            { id: authData.user.id, name: name, email: email, referral_code: referral }
+        ]);
+        
+    } else if (authError) {
+        return res.status(401).json({ success: false, message: authError.message });
+    }
+
+    // 3. Fetch their profile data from the database
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+    // 4. Fetch their lifetime orders
+    const { data: userOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', authData.user.id);
+
+    // 5. Calculate Luminous Society Tier dynamically
+    let tier = "Initiate";
+    const totalSpent = profile?.total_spent || 0;
+    if (totalSpent >= 50000) tier = "Celestial";
+    else if (totalSpent >= 25000) tier = "Eclipse";
+    else if (totalSpent >= 10000) tier = "Crescent";
+
+    // 6. Return data to the frontend Dashboard
+    return res.status(200).json({
+        success: true,
+        user: {
+            name: profile?.name || name,
+            email: profile?.email || email,
+            points: profile?.points || 0,
+            totalSpent: totalSpent,
+            tier: tier,
+            referralCode: profile?.referral_code || ''
+        },
+        orders: userOrders || []
+    });
+}
+

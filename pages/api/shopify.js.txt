@@ -1,0 +1,16 @@
+// pages/api/shopify.js
+// Automatically assigns points when Shopify delivers a package
+
+export default function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).end();
+
+    const shopifyOrder = req.body;
+    
+    console.log("Shopify Webhook Received: Order Delivered!");
+    console.log(`Customer: ${shopifyOrder.email}, Total: ${shopifyOrder.total_price}`);
+
+    // Here is where you would lookup the user in your database, calculate the multiplier 
+    // (1.2x, 1.5x, 2x based on their tier), and inject the Stardust Points into their account.
+    
+    res.status(200).send("Points applied successfully.");
+}
