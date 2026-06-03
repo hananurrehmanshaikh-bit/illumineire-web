@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Illumineire | A New Era of Fragrance</title>
     
-    <!-- React, ReactDOM, Babel & Tailwind -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Supabase Real-Time Backend -->
+    <!-- Supabase JS Integration -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    
     <script>
         tailwind.config = {
             theme: {
@@ -26,7 +26,7 @@
                     animation: {
                         'gradient-x': 'gradient-x 6s ease infinite',
                         'float-soft': 'float-soft 6s ease-in-out infinite',
-                        'pulse-glow': 'pulse-glow 6s ease-in-out infinite alternate',
+                        'pulse-glow': 'pulse-glow 4s ease-in-out infinite alternate',
                     },
                     keyframes: {
                         'gradient-x': {
@@ -38,8 +38,8 @@
                             '50%': { transform: 'translateY(-15px)' },
                         },
                         'pulse-glow': {
-                            '0%': { opacity: 0.6, transform: 'translate(-50%, -50%) scale(0.95)' },
-                            '100%': { opacity: 1, transform: 'translate(-50%, -50%) scale(1.05)' }
+                            '0%': { opacity: 0.6, transform: 'scale(0.95)' },
+                            '100%': { opacity: 1, transform: 'scale(1.05)' }
                         }
                     }
                 }
@@ -50,7 +50,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&display=swap');
         
-        body { background-color: #030303; margin: 0; padding: 0; overflow-x: hidden; color: #d6d3cd; }
+        body { background-color: #030303; margin: 0; padding: 0; overflow-x: hidden; color: #d6d3cd; scroll-behavior: smooth; }
         
         @media (pointer: fine) { * { cursor: none !important; } }
         
@@ -68,11 +68,11 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 45vw; height: 45vw;
+            width: 50vw; height: 50vw;
             max-width: 600px; max-height: 600px;
-            background: radial-gradient(circle, rgba(207,169,74,0.18) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(207,169,74,0.15) 0%, rgba(0,0,0,0) 70%);
             border-radius: 50%;
-            box-shadow: 0 0 100px rgba(207,169,74,0.12), inset 0 0 60px rgba(207,169,74,0.08);
+            box-shadow: 0 0 100px rgba(207,169,74,0.1), inset 0 0 60px rgba(207,169,74,0.05);
             z-index: 0;
             pointer-events: none;
             animation: pulse-glow 6s infinite alternate ease-in-out;
@@ -138,55 +138,60 @@
         // ==========================================
         // 1. CONFIGURATION & UTILS
         // ==========================================
-        const SHOPIFY_STORE_DOMAIN = "checkout.illumineire.com"; 
+        const SHOPIFY_STORE_DOMAIN = "illumineire.myshopify.com"; 
         const SHOPIFY_STOREFRONT_TOKEN = "09e58daacebce21a1b408124a0d09e2e";
         const WHATSAPP_LINK = "https://wa.me/923000000000";
 
-        // Supabase Initialization
+        // Supabase Initialization (Safe Guarded to Prevent White Screen Crashes)
         const SUPABASE_URL = "https://txwtpulztbjmeejapcot.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4d3RwdWx6dGJqbWVlamFwY290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTE2MjYsImV4cCI6MjA5NTEyNzYyNn0.OZFWBrj_F_uggyDNi5m5Sv8nbveqAHvlbv9P5px8qyU";
-        let supabaseClient = null;
-        if (window.supabase && SUPABASE_URL.startsWith('http')) {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let supabase = null;
+        try {
+            if (typeof window !== 'undefined' && window.supabase && SUPABASE_URL.startsWith('http')) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.warn("Supabase connection offline. Falling back to local state.");
         }
 
-        function formatPrice(num) { return "Rs. " + num.toLocaleString(); }
-        function generateOrderId() { return "ILM-" + Math.floor(1000 + Math.random() * 9000); }
-        function generateReferralCode(name) { return `ILM-${name.substring(0,4).toUpperCase()}-${Math.floor(100+Math.random()*900)}`; }
+        // Safe price formatting
+        const formatPrice = (num) => {
+            if (num === undefined || num === null || isNaN(num)) return "Rs. 0";
+            return "Rs. " + Number(num).toLocaleString();
+        };
+        const generateOrderId = () => "ILM-" + Math.floor(1000 + Math.random() * 9000);
+        const generateReferralCode = (name) => `ILM-${name.substring(0,4).toUpperCase()}-${Math.floor(100+Math.random()*900)}`;
 
         // ==========================================
         // 2. ICONS & EMBLEMS
         // ==========================================
-        function IconBase({ children, size = 24, className = "", onClick }) {
-            return <svg onClick={onClick} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>;
-        }
-        function MenuIcon(p) { return <IconBase {...p}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></IconBase>; }
-        function XIcon(p) { return <IconBase {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>; }
-        function Instagram(p) { return <IconBase {...p}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></IconBase>; }
-        function AwardIcon(p) { return <IconBase {...p}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>; }
-        function ArrowLeftIcon(p) { return <IconBase {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconBase>; }
-        function ArrowRightIcon(p) { return <IconBase {...p}><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></IconBase>; }
-        function UserIcon(p) { return <IconBase {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>; }
-        function BoxIcon(p) { return <IconBase {...p}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></IconBase>; }
-        function HeartIcon(p) { return <IconBase {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></IconBase>; }
-        function ShoppingBagIcon(p) { return <IconBase {...p}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></IconBase>; }
-        function TrashIcon(p) { return <IconBase {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></IconBase>; }
-        function CheckCircleIcon(p) { return <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></IconBase>; }
-        function TagIcon(p) { return <IconBase {...p}><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42l-8.704-8.704z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></IconBase>; }
-        function MailIcon(p) { return <IconBase {...p}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></IconBase>; }
+        const IconBase = ({ children, size = 24, className = "", onClick }) => <svg onClick={onClick} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>;
+        const MenuIcon = (p) => <IconBase {...p}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></IconBase>;
+        const XIcon = (p) => <IconBase {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+        const Instagram = (p) => <IconBase {...p}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></IconBase>;
+        const AwardIcon = (p) => <IconBase {...p}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>;
+        const ArrowLeftIcon = (p) => <IconBase {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconBase>;
+        const ArrowRightIcon = (p) => <IconBase {...p}><path d="m5 12h14"/><path d="m12 5 7 7-7 7"/></IconBase>;
+        const UserIcon = (p) => <IconBase {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>;
+        const BoxIcon = (p) => <IconBase {...p}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></IconBase>;
+        const HeartIcon = (p) => <IconBase {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></IconBase>;
+        const ShoppingBagIcon = (p) => <IconBase {...p}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></IconBase>;
+        const TrashIcon = (p) => <IconBase {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></IconBase>;
+        const CheckCircleIcon = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></IconBase>;
+        const TagIcon = (p) => <IconBase {...p}><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42l-8.704-8.704z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></IconBase>;
+        const MailIcon = (p) => <IconBase {...p}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></IconBase>;
 
-        function BrandLogo({ className = "w-8 h-8 text-[#CFA94A]" }) {
-            return (
-                <svg viewBox="0 0 100 100" className={className} fill="none" stroke="currentColor">
-                    <circle cx="50" cy="55" r="24" strokeWidth="1.2" />
-                    <path d="M49.6 40 L50 4 L50.4 40 Z" fill="currentColor" stroke="none" />
-                    <line x1="50" y1="40" x2="50" y2="79" strokeWidth="1.2" />
-                    <path d="M49.2 79 L50 88 L50.8 79 Z" fill="currentColor" stroke="none" />
-                    <path d="M38 58 C 38 72, 62 72, 62 58" strokeWidth="1.2" strokeLinecap="round" />
-                    <path d="M50 56 Q 54 60 50 64 Q 46 60 50 56 Z" fill="currentColor" stroke="none" />
-                </svg>
-            );
-        }
+        const BrandLogo = ({ className = "w-8 h-8 text-[#CFA94A]" }) => (
+            <svg viewBox="0 0 100 100" className={className} fill="none" stroke="currentColor">
+                <circle cx="50" cy="55" r="24" strokeWidth="1.2" />
+                <path d="M49.6 40 L50 4 L50.4 40 Z" fill="currentColor" stroke="none" />
+                <line x1="50" y1="40" x2="50" y2="79" strokeWidth="1.2" />
+                <path d="M49.2 79 L50 88 L50.8 79 Z" fill="currentColor" stroke="none" />
+                <path d="M38 58 C 38 72, 62 72, 62 58" strokeWidth="1.2" strokeLinecap="round" />
+                <path d="M50 56 Q 54 60 50 64 Q 46 60 50 56 Z" fill="currentColor" stroke="none" />
+            </svg>
+        );
 
         // ==========================================
         // 3. DATA DEFINITIONS
@@ -199,7 +204,7 @@
                 threeWords: 'Bright, Tropical, Playful.',
                 tagline: 'A vibrant, candy-sweet tropical dawn that jolts the senses awake and clears morning fog.', 
                 mood: 'Morning mist meets tropical candy.', 
-                occasion: 'Morning / vibrant', imageGlow: 'from-yellow-500/40', aura: 'Radiant',
+                occasion: 'Morning / vibrant', imageGlow: 'from-[#fef08a]', aura: 'Radiant',
                 pyramid: { top: 'Zesty Citrus Burst, Minted Air', heart: 'Ripe Tropical Fruit, Sweet Cream', base: 'Warm Vanilla, Soft Musk' },
                 performance: { projectionText: 'Heavy', longevitySkinText: '8-10 Hours', longevityClothesText: '18h+ clothes', projWidth: '85%', skinWidth: '70%', clothesWidth: '90%' },
                 aromatherapy: 'Awakening & Mental Clarity',
@@ -215,7 +220,7 @@
                 threeWords: 'Crisp, Authoritative, Driven.',
                 tagline: 'An unshakable, sharp, and intensely professional aura engineered for peak mid-day productivity.', 
                 mood: 'Boardroom air + second-skin clean.', 
-                occasion: 'Daytime / active', imageGlow: 'from-orange-500/40', aura: 'Fresh',
+                occasion: 'Daytime / active', imageGlow: 'from-[#f97316]', aura: 'Fresh',
                 pyramid: { top: 'Sharp Citrus Spark, Green Herbs', heart: 'Crisp Air, Clean Skin', base: 'Smooth Musk, Woody Depth' },
                 performance: { projectionText: 'Enormous', longevitySkinText: '10-12 Hours', longevityClothesText: '20h+ clothes', projWidth: '95%', skinWidth: '85%', clothesWidth: '95%' },
                 aromatherapy: 'Focus & Mid-Day Invigoration',
@@ -231,7 +236,7 @@
                 threeWords: 'Wealthy, Glowing, Resinous.',
                 tagline: 'A flawlessly smooth, liquid-gold embrace that physically melts away the tension of a long workday.', 
                 mood: 'Liquid gold melting into skin.', 
-                occasion: 'Evening / dates', imageGlow: 'from-[#d9772b]/40', aura: 'Warm',
+                occasion: 'Evening / dates', imageGlow: 'from-[#fb923c]', aura: 'Warm',
                 pyramid: { top: 'Saffron Glow, Soft Spice', heart: 'Liquid Amber, Floral Whisper', base: 'Golden Resin, Creamy Woods' },
                 performance: { projectionText: 'Enormous', longevitySkinText: '12+ Hours', longevityClothesText: '24h+ clothes', projWidth: '100%', skinWidth: '95%', clothesWidth: '100%' },
                 aromatherapy: 'Winding Down & Tension Release',
@@ -247,7 +252,7 @@
                 threeWords: 'Moody, Sophisticated, Tranquil.',
                 tagline: 'A dark, aquatic transition scent that halts a racing mind and forces the muscular system to release tension.', 
                 mood: 'Midnight ocean + shadowed woods.', 
-                occasion: 'Evening / formal', imageGlow: 'from-red-900/40', aura: 'Enigmatic',
+                occasion: 'Evening / formal', imageGlow: 'from-[#c084fc]', aura: 'Enigmatic',
                 pyramid: { top: 'Cool Water Notes, Green Leaves', heart: 'Soft Incense, Crisp Air', base: 'Deep Woods, Skin Musk' },
                 performance: { projectionText: 'Moderate', longevitySkinText: '8-10 Hours', longevityClothesText: '24h+ clothes', projWidth: '70%', skinWidth: '80%', clothesWidth: '100%' },
                 aromatherapy: 'Deep Calm & Evening Rest',
@@ -263,7 +268,7 @@
                 threeWords: 'Ancient, Meditative, Serene.',
                 tagline: 'A profoundly grounding sanctuary of dark woods and calming tea, built entirely to induce deep sleep.', 
                 mood: 'Temple at 3AM, wrapped in smoke.', 
-                occasion: 'Special occasions', imageGlow: 'from-purple-900/40', aura: 'Opulent',
+                occasion: 'Special occasions', imageGlow: 'from-stone-800', aura: 'Opulent',
                 pyramid: { top: 'Steamed Tea Leaf, Soft Air', heart: 'Sacred Wood, Warm Resin', base: 'Earthy Root, Smoky Depth' },
                 performance: { projectionText: 'Intimate to Moderate', longevitySkinText: '10+ Hours', longevityClothesText: '36h+ clothes', projWidth: '60%', skinWidth: '95%', clothesWidth: '100%' },
                 aromatherapy: 'Sleep Aid & Meditative Peace',
@@ -279,7 +284,7 @@
                 threeWords: 'Intoxicating, Comforting, Nostalgic.',
                 tagline: 'An emotional, aromatic hug of dark coffee and spiced vanilla that combats isolation and late-night anxiety.', 
                 mood: 'Coffee shop at midnight, wrapped in velvet.', 
-                occasion: 'Late night / intimate', imageGlow: 'from-blue-900/40', aura: 'Serene',
+                occasion: 'Late night / intimate', imageGlow: 'from-blue-800', aura: 'Serene',
                 pyramid: { top: 'Bitter Coffee Bean, Bright Citrus', heart: 'Spiced Rose, Dark Vanilla', base: 'Aged Tobacco, Sweet Musk' },
                 performance: { projectionText: 'Heavy', longevitySkinText: '14+ Hours', longevityClothesText: '24h+ clothes', projWidth: '85%', skinWidth: '100%', clothesWidth: '100%' },
                 aromatherapy: 'Emotional Comfort & Soothing Anxiety',
@@ -331,6 +336,84 @@
                             <button onClick={onClose} className="flex-1 border border-stone-700 hover:border-[#CFA94A] text-stone-300 py-3 text-[10px] uppercase tracking-widest transition-colors font-bold">
                                 Dismiss
                             </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TiltCard({ product, navigateTo }) {
+            const cardRef = useRef();
+            const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
+            
+            const handleMouseMove = (e) => {
+                if (window.matchMedia("(pointer: coarse)").matches) return; 
+                if (!cardRef.current) return;
+                const rect = cardRef.current.getBoundingClientRect();
+                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                const centerX = rect.width / 2; const centerY = rect.height / 2;
+                setTilt({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15, glareX: (x / rect.width) * 100, glareY: (y / rect.height) * 100 });
+            };
+
+            return (
+                <div ref={cardRef} className="perspective-[1500px] cursor-pointer group w-full" onMouseMove={handleMouseMove} onMouseLeave={() => setTilt({ x: 0, y: 0, glareX: 50, glareY: 50 })} onClick={() => navigateTo(`product/${product.slug}`)}>
+                    <div className="glass-panel flex flex-col md:flex-row transition-all duration-300 ease-out preserve-3d h-auto md:h-[400px] rounded-xl overflow-hidden" style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.02, 1.02, 1.02)` }}>
+                        <div className="absolute inset-0 z-50 pointer-events-none transition-opacity duration-300 hidden md:block" style={{ background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)`, opacity: (tilt.x || tilt.y) ? 1 : 0 }} />
+
+                        <div className={`h-80 md:h-full w-full md:w-1/2 relative overflow-hidden bg-gradient-to-b ${product.imageGlow} to-black/60 flex items-center justify-center p-8 transform-style-3d`}>
+                            {product.photoshoot ? (
+                                <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity"><Slideshow images={product.photoshoot} /><div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" /></div>
+                            ) : (
+                                <div className="absolute inset-0 bg-black/40" />
+                            )}
+                            
+                            {/* Vertical Ingredients List (Left Edge) */}
+                            {product.ingredients && (
+                                <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col gap-6">
+                                    <div className="absolute left-7 md:left-8 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
+                                    {product.ingredients.map((imgUrl, idx) => {
+                                        const isPng = imgUrl.endsWith('.png');
+                                        return (
+                                            <div key={idx} className="glass-panel w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-float-soft relative z-30" style={{ animationDelay: `${idx * 0.4}s` }}>
+                                                <img src={imgUrl} className={`w-2/3 h-2/3 ${isPng ? 'object-contain' : 'object-cover rounded-full hd-bottle'}`} alt="Ingredient" />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {product.bottleImage ? (
+                                <div className="relative z-20 w-48 h-64 md:w-72 md:h-96 flex flex-col items-center justify-end transition-transform duration-300 ease-out" style={{ transform: (tilt.x || tilt.y) ? 'translateZ(70px)' : 'translateZ(0px)' }}>
+                                    <img src={product.bottleImage} alt={product.name} className={`w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] hd-bottle ${product.slug === 'sunrise' ? 'scale-[0.65] md:scale-[0.80] group-hover:scale-[0.70] md:group-hover:scale-[0.85]' : 'scale-90 group-hover:scale-100'}`} />
+                                </div>
+                            ) : (
+                                <div className="relative z-20 w-24 h-36 flex flex-col items-center justify-end drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out" style={{ transform: (tilt.x || tilt.y) ? 'translateZ(70px)' : 'translateZ(0px)' }}>
+                                    <div className="w-8 h-10 bg-gradient-to-r from-stone-400 via-[#CFA94A] to-stone-600 rounded-t-sm shadow-inner z-20" />
+                                    <div className="w-10 h-2 bg-gradient-to-r from-stone-500 to-stone-700 rounded-sm z-20" />
+                                    <div className="w-24 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative overflow-hidden shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
+                                        <div className={`absolute bottom-0 w-full h-3/4 bg-gradient-to-b ${product.imageGlow} to-transparent opacity-60`} />
+                                        <div className="relative z-10 border border-[#CFA94A]/40 px-3 py-4 bg-black/40 backdrop-blur-md">
+                                            <div className="text-[6px] uppercase tracking-[0.2em] text-[#CFA94A] text-center font-cinzel leading-tight">ILLUMINEIRE<br/><span className="text-[4px] text-stone-400 font-sans tracking-widest">{product.name}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="p-8 flex-1 flex flex-col justify-center relative z-20 bg-[#161616]/90">
+                            <h3 className="text-3xl text-[#CFA94A] mb-1 tracking-wide font-cinzel">{product.name}</h3>
+                            <p className="text-[10px] uppercase tracking-widest text-[#CFA94A]/70 mb-4 font-sans font-bold">{product.threeWords}</p>
+                            <div className="flex gap-2 mb-4">{product.sizes && product.sizes.map(s => <span key={s} className="px-2 py-1 text-[8px] uppercase tracking-widest border border-[#CFA94A]/40 text-[#CFA94A] bg-[#CFA94A]/10 rounded-sm">{s}</span>)}</div>
+                            <p className="text-sm text-stone-400 italic mb-8 font-sans leading-relaxed">{product.tagline}</p>
+                            
+                            <div className="space-y-4 mb-10 font-sans flex-1">
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">PROJECTION</p><p className="text-xs text-stone-300 font-bold">{product.performance.projectionText}</p></div>
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">LONGEVITY</p><p className="text-xs text-stone-300 font-bold">{product.performance.longevitySkinText}</p></div>
+                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">AROMATHERAPY GOAL</p><p className="text-xs text-stone-300">{product.aromatherapy}</p></div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3 font-sans text-[9px] uppercase tracking-widest font-semibold mt-auto">
+                                <button className="liquid-btn flex-1 bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 shadow-[0_0_15px_rgba(207,169,74,0.3)]">EXPLORE DETAIL</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -421,86 +504,8 @@
             );
         }
 
-        function TiltCard({ product, navigateTo }) {
-            const cardRef = useRef();
-            const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
-            const [isHovered, setIsHovered] = useState(false);
-            
-            const handleMouseMove = (e) => {
-                if (window.matchMedia("(pointer: coarse)").matches) return; 
-                if (!cardRef.current) return;
-                const rect = cardRef.current.getBoundingClientRect();
-                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                const centerX = rect.width / 2; const centerY = rect.height / 2;
-                setTilt({ x: ((y - centerY) / centerY) * -15, y: ((x - centerX) / centerX) * 15, glareX: (x / rect.width) * 100, glareY: (y / rect.height) * 100 });
-            };
-
-            return (
-                <div ref={cardRef} className="perspective-[1500px] cursor-pointer group w-full" onMouseMove={handleMouseMove} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); setTilt({ x: 0, y: 0, glareX: 50, glareY: 50 }); }} onClick={() => navigateTo(`product/${product.slug}`)}>
-                    <div className="glass-panel flex flex-col md:flex-row transition-all duration-300 ease-out preserve-3d h-auto md:h-[400px] rounded-xl overflow-hidden" style={{ transform: isHovered ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.02, 1.02, 1.02)` : 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)' }}>
-                        <div className="absolute inset-0 z-50 pointer-events-none transition-opacity duration-300 hidden md:block" style={{ background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)`, opacity: isHovered ? 1 : 0 }} />
-
-                        <div className={`h-80 md:h-full w-full md:w-1/2 relative overflow-hidden bg-gradient-to-b ${product.imageGlow} to-black/60 flex items-center justify-center p-8 transform-style-3d`}>
-                            {product.photoshoot ? (
-                                <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity"><Slideshow images={product.photoshoot} /><div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" /></div>
-                            ) : (
-                                <div className="absolute inset-0 bg-black/40" />
-                            )}
-                            
-                            {/* Trendy Ingredient Bubble Float */}
-                            {product.ingredients && isHovered && (
-                                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                                    {product.ingredients.map((imgUrl, idx) => {
-                                        const isPng = imgUrl.endsWith('.png');
-                                        const positions = ['left-[5%] bottom-10', 'right-[5%] bottom-20', 'left-[35%] bottom-0', 'left-[15%] bottom-24', 'right-[25%] bottom-10'];
-                                        const animations = ['animate-float-1', 'animate-float-2', 'animate-float-3', 'animate-float-1', 'animate-float-2'];
-                                        return (
-                                            <img key={idx} src={imgUrl} className={`absolute ${positions[idx % positions.length]} ${animations[idx % animations.length]} ${isPng ? 'w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]' : 'w-14 h-14 md:w-20 md:h-20 object-cover rounded-full shadow-[0_0_25px_rgba(207,169,74,0.4)] border border-[#CFA94A]/30'} transition-all`} alt="Ingredient Note" />
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {product.bottleImage ? (
-                                <div className="relative z-20 w-48 h-64 md:w-72 md:h-96 flex flex-col items-center justify-end transition-transform duration-300 ease-out" style={{ transform: isHovered ? 'translateZ(70px)' : 'translateZ(0px)' }}>
-                                    <img src={product.bottleImage} alt={product.name} className={`w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] hd-bottle ${product.slug === 'sunrise' ? 'scale-75' : 'scale-[1.15]'}`} />
-                                </div>
-                            ) : (
-                                <div className="relative z-20 w-24 h-36 flex flex-col items-center justify-end drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] transition-transform duration-300 ease-out" style={{ transform: isHovered ? 'translateZ(70px)' : 'translateZ(0px)' }}>
-                                    <div className="w-8 h-10 bg-gradient-to-r from-stone-400 via-[#CFA94A] to-stone-600 rounded-t-sm shadow-inner z-20" />
-                                    <div className="w-10 h-2 bg-gradient-to-r from-stone-500 to-stone-700 rounded-sm z-20" />
-                                    <div className="w-24 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative overflow-hidden shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
-                                        <div className={`absolute bottom-0 w-full h-3/4 bg-gradient-to-b ${product.imageGlow} to-transparent opacity-60`} />
-                                        <div className="relative z-10 border border-[#CFA94A]/40 px-3 py-4 bg-black/40 backdrop-blur-md">
-                                            <div className="text-[6px] uppercase tracking-[0.2em] text-[#CFA94A] text-center font-cinzel leading-tight">ILLUMINEIRE<br/><span className="text-[4px] text-stone-400 font-sans tracking-widest">{product.name}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="p-8 flex-1 flex flex-col justify-center relative z-20 bg-[#161616]/90">
-                            <h3 className="text-3xl text-[#CFA94A] mb-1 tracking-wide font-cinzel">{product.name}</h3>
-                            <p className="text-[10px] uppercase tracking-widest text-[#CFA94A]/70 mb-4 font-sans font-bold">{product.threeWords}</p>
-                            <div className="flex gap-2 mb-4">{product.sizes && product.sizes.map(s => <span key={s} className="px-2 py-1 text-[8px] uppercase tracking-widest border border-[#CFA94A]/40 text-[#CFA94A] bg-[#CFA94A]/10 rounded-sm">{s}</span>)}</div>
-                            <p className="text-sm text-stone-400 italic mb-8 font-sans leading-relaxed">{product.tagline}</p>
-                            
-                            <div className="space-y-4 mb-10 font-sans flex-1">
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">PROJECTION</p><p className="text-xs text-stone-300 font-bold">{product.performance.projectionText}</p></div>
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">LONGEVITY</p><p className="text-xs text-stone-300 font-bold">{product.performance.longevitySkinText}</p></div>
-                                <div><p className="text-[8px] uppercase tracking-widest text-[#CFA94A] font-bold mb-1">AROMATHERAPY GOAL</p><p className="text-xs text-stone-300">{product.aromatherapy}</p></div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-3 font-sans text-[9px] uppercase tracking-widest font-semibold mt-auto">
-                                <button className="liquid-btn flex-1 bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 shadow-[0_0_15px_rgba(207,169,74,0.3)]">EXPLORE DETAIL</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
         // ==========================================
-        // 5. PAGE ROUTE COMPONENTS
+        // 5. PAGE COMPONENTS
         // ==========================================
         function HomePage({ navigateTo }) {
             const [activeSlug, setActiveSlug] = useState(PRODUCTS[0].slug);
@@ -547,7 +552,7 @@
                                 <div className="w-2 h-2 bg-[#CFA94A] rounded-full mb-2 shadow-[0_0_20px_rgba(207,169,74,1)] animate-pulse" />
                                 <p className="text-[10px] uppercase tracking-[0.4em] text-[#CFA94A]/80 mb-6 font-sans font-semibold">PAKISTAN • EST. MMXXVI</p>
                                 
-                                <h1 className="text-4xl lg:text-6xl tracking-[0.1em] text-[#CFA94A] mb-4 drop-shadow-[0_0_25px_rgba(207,169,74,0.4)] font-cinzel reflective-text leading-none">
+                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-[0.1em] text-[#CFA94A] mb-4 drop-shadow-[0_0_25px_rgba(207,169,74,0.4)] font-cinzel reflective-text leading-none">
                                     ILLUMINEIRE
                                 </h1>
                                 
@@ -611,7 +616,7 @@
                             </div>
                             
                             <div className="relative w-full max-w-7xl mx-auto z-10 px-4">
-                                <button onClick={scrollLeft} className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowLeftIcon size={24}/></button>
+                                <button onClick={scrollLeft} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl bg-black/60"><ArrowLeftIcon size={24}/></button>
                                 
                                 <div ref={scrollRef} onScroll={handleScroll} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-8 pb-12 pt-4 px-[10vw]">
                                     {PRODUCTS.map((product) => (
@@ -619,7 +624,7 @@
                                             <div className="glass-panel p-6 cursor-pointer group flex flex-col items-center h-[420px] relative overflow-hidden rounded-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(207,169,74,0.2)] border border-stone-800 hover:border-[#CFA94A]/40" onClick={() => navigateTo(`product/${product.slug}`)}>
                                                 <div className="h-56 flex items-center justify-center mb-6 relative z-10 w-full">
                                                     {product.bottleImage ? (
-                                                        <img src={product.bottleImage} alt={product.name} className={`h-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-700 hd-bottle ${product.slug === 'sunrise' ? 'scale-75 group-hover:scale-90' : ''}`} />
+                                                        <img src={product.bottleImage} alt={product.name} className={`h-full w-full object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] transition-transform duration-700 hd-bottle ${product.slug === 'sunrise' ? 'scale-[0.65] md:scale-[0.80] group-hover:scale-[0.70] md:group-hover:scale-[0.85]' : 'scale-90 group-hover:scale-105'}`} />
                                                     ) : (
                                                         <div className="w-20 h-28 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm shadow-[inset_0_0_20px_rgba(207,169,74,0.1)] group-hover:scale-110 transition-transform duration-700"><span className="text-[5px] uppercase tracking-widest text-[#CFA94A] text-center font-cinzel">{product.name}</span></div>
                                                     )}
@@ -628,13 +633,13 @@
                                                 <p className="text-[8px] uppercase tracking-widest text-stone-400 mb-2 font-sans font-bold relative z-10">{product.threeWords}</p>
                                                 <p className="text-xs text-stone-300 italic mb-4 flex-grow relative z-10 px-2 line-clamp-2">"{product.mood}"</p>
                                                 <div className="w-full h-[1px] bg-stone-800 mb-4"></div>
-                                                <span className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold">Explore</span>
+                                                <span className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold">Explore Scent</span>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <button onClick={scrollRight} className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl"><ArrowRightIcon size={24}/></button>
+                                <button onClick={scrollRight} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 text-[#CFA94A] hover:text-white p-3 glass-panel rounded-full hidden sm:block shadow-xl bg-black/60"><ArrowRightIcon size={24}/></button>
                             </div>
                             
                             <div className="text-center mt-8 relative z-10">
@@ -723,10 +728,10 @@
                                 <section key={product.id} data-slug={product.slug} className="time-warp-section min-h-[80vh] flex items-center justify-center px-4 py-20 snap-center">
                                     <div className={`max-w-5xl w-full flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 ${isActive ? 'opacity-100 scale-100' : 'opacity-30 scale-95 blur-[2px]'}`}>
                                         
-                                        <div className="w-full md:w-1/2 flex justify-center items-center relative h-96 cursor-pointer" onClick={() => navigateTo(`product/${product.slug}`)}>
+                                        <div className="w-full md:w-1/2 flex justify-center items-center relative h-80 md:h-96 cursor-pointer p-6" onClick={() => navigateTo(`product/${product.slug}`)}>
                                             <div className="absolute inset-0 bg-black/40 glass-panel rounded-2xl -z-10" />
                                             {product.bottleImage ? (
-                                                <img src={product.bottleImage} alt={product.name} className={`h-[120%] object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] animate-float-soft hd-bottle ${product.slug === 'sunrise' ? 'scale-75' : ''}`} />
+                                                <img src={product.bottleImage} alt={product.name} className={`w-full h-full object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,0.9)] animate-float-soft hd-bottle ${product.slug === 'sunrise' ? 'scale-[0.35] md:scale-[0.45]' : 'scale-75 md:scale-90'}`} />
                                             ) : (
                                                 <div className="w-32 h-44 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm shadow-[inset_0_0_20px_rgba(207,169,74,0.1)] animate-float-soft">
                                                     <span className="text-[8px] uppercase tracking-widest text-[#CFA94A] text-center font-cinzel">{product.name}</span>
@@ -735,11 +740,12 @@
                                         </div>
 
                                         <div className="w-full md:w-1/2 text-left">
+                                            <p className="text-[10px] uppercase tracking-[0.4em] text-[#CFA94A] font-bold mb-2 font-sans">{product.aura} Resonance</p>
                                             <h2 className="text-5xl md:text-6xl font-cinzel text-white mb-2">{product.name}</h2>
                                             <p className="text-[10px] uppercase tracking-widest text-[#CFA94A] mb-6 font-sans font-bold">{product.threeWords}</p>
                                             <p className="text-sm text-stone-300 italic mb-8 font-sans leading-relaxed border-l border-[#CFA94A]/30 pl-4">"{product.tagline}"</p>
                                             
-                                            <button onClick={() => navigateTo(`product/${product.slug}`)} className="liquid-btn bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white px-10 py-4 font-sans text-[10px] uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(207,169,74,0.3)] rounded-sm">Enter The Aura</button>
+                                            <button onClick={() => navigateTo(`product/${product.slug}`)} className="liquid-btn bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white px-10 py-4 font-sans text-[10px] uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(207,169,74,0.3)] rounded-sm">Explore Scent</button>
                                         </div>
 
                                     </div>
@@ -787,7 +793,7 @@
 
                                 <div className="w-full max-w-[500px] aspect-[3/4] flex items-center justify-center relative z-20 pointer-events-none">
                                     {product.bottleImage ? (
-                                        <img src={product.bottleImage} alt={product.name} className={`w-[130%] h-[130%] md:w-[140%] md:h-[140%] ${product.slug === 'sunrise' ? 'md:w-[55%] md:h-[55%]' : ''} object-contain drop-shadow-[0_40px_50px_rgba(0,0,0,0.95)] animate-float-soft hd-bottle ${product.slug === 'sunrise' ? 'scale-[25%]' : 'scale-110'}`} />
+                                        <img src={product.bottleImage} alt={product.name} className={`w-[140%] h-[140%] md:w-[150%] md:h-[150%] object-contain drop-shadow-[0_35px_45px_rgba(0,0,0,0.9)] animate-[pulse_6s_infinite] hd-bottle ${product.slug === 'sunrise' ? 'scale-[0.35] md:scale-[0.50]' : 'scale-90 md:scale-100'}`} />
                                     ) : (
                                         <div className="text-center glass-panel p-8 absolute bottom-20 rounded-xl">
                                             <p className="text-[10px] tracking-[0.4em] uppercase text-[#CFA94A] mb-2 font-cinzel">ILLUMINEIRE</p>
@@ -798,22 +804,22 @@
 
                                 {/* Vertical Ingredients List (Left Edge) */}
                                 {product.ingredients && (
-                                    <div className="absolute left-0 md:left-4 top-1/2 -translate-y-1/2 flex flex-col gap-6 z-30 pointer-events-none">
-                                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
+                                    <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col gap-6">
+                                        <div className="absolute left-7 md:left-8 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[#CFA94A]/30 to-transparent z-20 pointer-events-none" />
                                         {product.ingredients.map((imgUrl, idx) => {
                                             const isPng = imgUrl.endsWith('.png');
                                             return (
-                                                <div key={idx} className="glass-panel w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center border border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] relative z-30 animate-float-soft" style={{ animationDelay: `${idx * 0.4}s` }}>
+                                                <div key={idx} className="glass-panel w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-[#CFA94A]/30 shadow-[0_10px_20px_rgba(0,0,0,0.8)] animate-float-soft relative z-30" style={{ animationDelay: `${idx * 0.4}s` }}>
                                                     <img src={imgUrl} className={`w-2/3 h-2/3 ${isPng ? 'object-contain' : 'object-cover rounded-full hd-bottle'}`} alt="Ingredient" />
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                )}
+                                 )}
                             </div>
 
-                            {/* Performance Bars - Moved under photoshoot to balance columns */}
-                            <div className="space-y-6 flex flex-col justify-center glass-panel p-8 rounded-xl border border-stone-800 w-full max-w-[450px] font-sans z-10">
+                            {/* Performance Bars */}
+                            <div className="space-y-6 flex flex-col justify-center glass-panel p-6 md:p-8 rounded-xl border border-stone-800 w-full max-w-[450px] font-sans z-10">
                                  <h4 className="text-xs uppercase tracking-widest text-white font-cinzel mb-2 border-b border-stone-800 pb-2">Performance & Goal</h4>
                                 <div>
                                     <div className="flex justify-between text-[10px] uppercase tracking-widest mb-1"><span className="text-stone-400">Projection</span><span className="text-[#CFA94A] font-bold">{product.performance.projectionText}</span></div>
@@ -835,7 +841,7 @@
                         </div>
 
                         {/* RIGHT COLUMN: Scrolling Information */}
-                        <div className="w-full lg:w-1/2 flex flex-col justify-start pb-32 pt-12">
+                        <div className="w-full lg:w-1/2 flex flex-col justify-start pb-32 pt-8 md:pt-12">
                             <h1 className="text-5xl md:text-7xl font-cinzel text-[#CFA94A] mb-2 reflective-text leading-tight">{product.name}</h1>
                             <p className="text-[10px] uppercase tracking-widest text-[#CFA94A]/70 mb-6 font-sans font-bold">{product.threeWords}</p>
                             
@@ -859,7 +865,7 @@
                             <p className="text-xl italic text-white mb-12 border-l-2 border-[#CFA94A]/40 pl-6">{product.tagline}</p>
                             
                             <div className="mb-8 font-sans">
-                                <div className="space-y-4 text-sm glass-panel p-8 rounded-xl border border-stone-800">
+                                <div className="space-y-4 text-sm glass-panel p-6 md:p-8 rounded-xl border border-stone-800">
                                     <h4 className="text-xs uppercase tracking-widest text-white font-cinzel mb-4 border-b border-stone-800 pb-2">Olfactory Profile</h4>
                                     <div><span className="text-[9px] uppercase tracking-widest text-[#CFA94A] block mb-1">Top Notes</span><span className="text-stone-300 font-light">{product.pyramid.top}</span></div>
                                     <div className="w-full h-[1px] bg-stone-800" />
@@ -1046,7 +1052,7 @@
                                         <div key={i} className={`absolute transition-transform duration-700 ease-out`} 
                                              style={{ transform: `translateX(${i * 40 - (bundle.products.length * 20)}px) scale(${1 - (i * 0.1)})`, zIndex: bundle.products.length - i }}>
                                             {p.bottleImage ? (
-                                                <img src={p.bottleImage} className={`w-40 h-56 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.9)] group-hover:scale-110 transition-transform duration-500 hd-bottle ${p.slug === 'sunrise' ? 'scale-75 group-hover:scale-90' : ''}`} />
+                                                <img src={p.bottleImage} className={`w-40 h-56 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.9)] transition-transform duration-500 hd-bottle ${p.slug === 'sunrise' ? 'scale-[0.40] md:scale-[0.50] group-hover:scale-[0.45] md:group-hover:scale-[0.55]' : 'group-hover:scale-110'}`} />
                                             ) : (
                                                 <div className="w-24 h-36 border border-white/20 rounded-sm bg-gradient-to-b from-white/10 to-transparent flex items-center justify-center backdrop-blur-sm relative shadow-[inset_0_0_20px_rgba(207,169,74,0.1)]">
                                                     <div className="absolute inset-0 bg-black/60" />
@@ -1069,7 +1075,7 @@
                                         <span className="text-sm text-stone-500 line-through mb-1">{formatPrice(bundle.originalPrice)}</span>
                                     </div>
 
-                                    <button onClick={() => addBundleToCart(bundle)} className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white px-12 py-4 text-xs uppercase tracking-widest font-bold shadow-[0_0_30px_rgba(207,169,74,0.3)] rounded-md">
+                                    <button onClick={() => addBundleToCart(bundle)} className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] hover:from-[#c26622] hover:to-[#b8953f] text-white px-12 py-4 text-xs uppercase tracking-widest font-bold shadow-[0_0_30px_rgba(207,169,74,0.3)] transform hover:scale-[1.02] transition-all">
                                         Add Set to Bag
                                     </button>
                                 </div>
@@ -1223,7 +1229,7 @@
                             <h2 className="text-lg font-cinzel text-[#CFA94A] pt-4">10. Contact Us</h2>
                             <p>If you have any questions regarding this Privacy Policy, you may contact us:<br/>
                             Illumineire<br/>
-                            Email: illumineirefragrances@gmail.com<br/>
+                            Email: support@illumineire.com<br/>
                             Address: Karachi, Sindh, Pakistan</p>
                         </div>
                     </div>
@@ -1310,7 +1316,7 @@
                                     <div key={index} className="flex gap-4 border-b border-white/5 pb-6">
                                         <div className="w-20 h-24 bg-gradient-to-b from-stone-800 to-black border border-white/10 flex items-center justify-center shrink-0 p-2 overflow-hidden rounded-sm">
                                             {item.product.bottleImage ? (
-                                                <img src={item.product.bottleImage} className={`w-full h-full object-contain drop-shadow-md hd-bottle ${item.product.slug === 'sunrise' ? 'scale-75' : ''}`} />
+                                                <img src={item.product.bottleImage} className={`w-full h-full object-contain drop-shadow-md hd-bottle ${item.product.slug === 'sunrise' ? 'scale-[0.65]' : ''}`} />
                                             ) : (
                                                 <span className="text-[6px] text-[#CFA94A] font-cinzel uppercase text-center leading-tight">ILLUMINEIRE<br/>{item.product.name}</span>
                                             )}
@@ -1376,7 +1382,7 @@
                 return (
                     <div className="min-h-screen pt-40 pb-24 flex flex-col items-center text-center px-6">
                         <h1 className="text-3xl font-cinzel text-[#CFA94A] mb-4">Your bag is empty</h1>
-                        <button onClick={() => navigateTo('catalog')} className="text-[10px] uppercase tracking-widest text-stone-300 border-b border-[#CFA94A] pb-1 hover:text-white">Return to Collection</button>
+                        <button onClick={() => navigateTo('home')} className="text-[10px] uppercase tracking-widest text-stone-300 border-b border-[#CFA94A] pb-1 hover:text-white">Return to Collection</button>
                     </div>
                 );
             }
@@ -1403,11 +1409,11 @@
                                             value={formData.email} 
                                             onChange={(e) => { setFormData({email: e.target.value}); setError(''); }} 
                                             placeholder="Enter your email address" 
-                                            className={`w-full bg-black/60 border ${error ? 'border-red-500' : 'border-stone-700'} p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm`} 
+                                            className={`w-full bg-[#111] border ${error ? 'border-red-500' : 'border-stone-800'} p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm`} 
                                         />
                                         {error && <span className="text-red-500 text-[10px] uppercase mt-2 block tracking-widest">{error}</span>}
                                     </div>
-                                    <button onClick={submitCheckout} className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] hover:from-[#c26622] hover:to-[#b8953f] text-white py-5 text-[10px] uppercase tracking-widest font-bold shadow-lg rounded-md mt-4 flex justify-center items-center gap-3">
+                                    <button onClick={submitCheckout} className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-5 text-[10px] uppercase tracking-widest font-bold shadow-lg rounded-md mt-4 flex justify-center items-center gap-3">
                                         Proceed to Secure Portal <ArrowRightIcon size={14} />
                                     </button>
                                 </div>
@@ -1513,8 +1519,8 @@
 
         function UserDashboard({ navigateTo, user, setUser, orders }) {
             const [activeTab, setActiveTab] = useState('overview');
-            const [isLoginMode, setIsLoginMode] = useState(true);
-            const [loginInput, setLoginInput] = useState('');
+            const [isLoginView, setIsLoginView] = useState(true);
+            const [nameInput, setNameInput] = useState('');
             const [emailInput, setEmailInput] = useState('');
             const [passwordInput, setPasswordInput] = useState('');
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1522,60 +1528,67 @@
 
             useEffect(() => { 
                 window.scrollTo(0,0); 
-                const savedUser = localStorage.getItem('illumineire_user');
-                if (savedUser && !user) {
-                    setUser(JSON.parse(savedUser));
+                if (supabase) {
+                    supabase.auth.getSession().then(({ data: { session } }) => {
+                        if (session) fetchUserProfile(session.user.id, session.user.email);
+                    });
                 }
             }, []);
 
-            useEffect(() => {
-                if (user) {
-                    localStorage.setItem('illumineire_user', JSON.stringify(user));
-                } else {
-                    localStorage.removeItem('illumineire_user');
-                }
-            }, [user]);
+            const fetchUserProfile = async (userId, email) => {
+                if (!supabase) return;
+                try {
+                    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+                    if (data) {
+                        setUser({ id: userId, name: data.name, email: data.email, points: data.points, totalSpent: data.total_spent, referralCode: data.referral_code });
+                    } else if (error && error.code === 'PGRST116') {
+                        // Profile doesn't exist yet, create a fallback
+                        setUser({ id: userId, name: "Member", email: email, points: 0, totalSpent: 0, referralCode: generateReferralCode("MEMBER") });
+                    }
+                } catch(err) { console.error("Profile fetch error:", err); }
+            };
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setAuthError('');
-                
-                const emailRegex = /^[^\s@]+@gmail\.com$/i;
-                if (!emailRegex.test(emailInput)) { setAuthError('Only @gmail.com addresses are permitted.'); return; }
-                if (passwordInput.length < 6) { setAuthError('Password must be at least 6 characters.'); return; }
-
                 setIsSubmitting(true);
 
-                if (!supabaseClient) {
-                    console.log("Supabase Offline. Simulating login/signup...");
+                if (!supabase) {
+                    // Offline Simulation Fallback
                     setTimeout(() => {
-                        setUser({ name: loginInput || 'Guest', email: emailInput, points: 0, totalSpent: 0, referralCode: generateReferralCode(loginInput || 'GST') });
+                        setUser({ name: nameInput || 'Guest Member', email: emailInput, points: 0, totalSpent: 0, referralCode: generateReferralCode(nameInput || 'GST') });
                         setIsSubmitting(false);
                     }, 800);
                     return;
                 }
 
                 try {
-                    if (isLoginMode) {
-                        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailInput, password: passwordInput });
+                    if (isLoginView) {
+                        const { data, error } = await supabase.auth.signInWithPassword({ email: emailInput, password: passwordInput });
                         if (error) throw error;
-                        
-                        const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', data.user.id).single();
-                        setUser({ name: profile?.name || 'Guest', email: data.user.email, points: profile?.points || 0, totalSpent: profile?.total_spent || 0, referralCode: profile?.referral_code || '' });
+                        if (data.user) fetchUserProfile(data.user.id, data.user.email);
                     } else {
-                        if (!loginInput.trim()) { throw new Error("Name is required for signup."); }
-                        const { data, error } = await supabaseClient.auth.signUp({ email: emailInput, password: passwordInput });
+                        if (!nameInput.trim()) throw new Error("Name is required for registration.");
+                        const { data, error } = await supabase.auth.signUp({ email: emailInput, password: passwordInput });
                         if (error) throw error;
-
-                        const newReferral = generateReferralCode(loginInput);
-                        await supabaseClient.from('profiles').insert([{ id: data.user.id, name: loginInput, email: emailInput, referral_code: newReferral }]);
-                        
-                        setUser({ name: loginInput, email: emailInput, points: 0, totalSpent: 0, referralCode: newReferral });
+                        if (data.user) {
+                            const newProfile = { id: data.user.id, name: nameInput, email: emailInput, points: 0, total_spent: 0, referral_code: generateReferralCode(nameInput) };
+                            const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
+                            if (insertError) throw insertError;
+                            setUser({ id: data.user.id, name: nameInput, email: emailInput, points: 0, totalSpent: 0, referralCode: newProfile.referral_code });
+                        }
                     }
                 } catch(err) {
-                    setAuthError(err.message || 'Authentication failed.');
+                    setAuthError(err.message);
+                } finally {
+                    setIsSubmitting(false);
                 }
-                setIsSubmitting(false);
+            };
+
+            const handleSignOut = async () => {
+                if (supabase) await supabase.auth.signOut();
+                setUser(null);
+                navigateTo('home');
             };
 
             if (!user) {
@@ -1585,31 +1598,33 @@
                             <div className="aurora-bg top-[-50px] right-[-50px] opacity-50"></div>
                             <div className="relative z-10 text-center mb-10">
                                 <BrandLogo className="w-12 h-12 text-[#CFA94A] mx-auto mb-6" />
-                                <h2 className="text-2xl font-cinzel text-white tracking-widest">{isLoginMode ? 'Access Atelier' : 'Join Society'}</h2>
+                                <h2 className="text-2xl font-cinzel text-white tracking-widest">The Atelier</h2>
                                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#CFA94A] mt-2 font-sans font-bold">Luminous Society Portal</p>
                             </div>
-                            <div className="flex mb-6 border-b border-stone-800 relative z-10 font-sans">
-                                <button onClick={() => {setIsLoginMode(true); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-colors ${isLoginMode ? 'text-[#CFA94A] border-b-2 border-[#CFA94A]' : 'text-stone-500'}`}>Sign In</button>
-                                <button onClick={() => {setIsLoginMode(false); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-colors ${!isLoginMode ? 'text-[#CFA94A] border-b-2 border-[#CFA94A]' : 'text-stone-500'}`}>Create Account</button>
+                            
+                            <div className="flex gap-4 mb-8 relative z-10">
+                                <button onClick={() => {setIsLoginView(true); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2 ${isLoginView ? 'border-[#CFA94A] text-[#CFA94A]' : 'border-transparent text-stone-500'}`}>Sign In</button>
+                                <button onClick={() => {setIsLoginView(false); setAuthError('');}} className={`flex-1 pb-2 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2 ${!isLoginView ? 'border-[#CFA94A] text-[#CFA94A]' : 'border-transparent text-stone-500'}`}>Create Account</button>
                             </div>
+
                             <form onSubmit={handleAuth} className="relative z-10 space-y-4 font-sans">
-                                {!isLoginMode && (
-                                    <div className="animate-in slide-in-from-top-4 duration-300">
+                                {!isLoginView && (
+                                    <div>
                                         <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Full Name</label>
-                                        <input type="text" value={loginInput} onChange={(e) => setLoginInput(e.target.value)} placeholder="Enter your full name" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required={!isLoginMode} />
+                                        <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Enter your full name" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required={!isLoginView} />
                                     </div>
                                 )}
                                 <div>
                                     <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Email Address</label>
-                                    <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="you@gmail.com" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required />
+                                    <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="you@example.com" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required />
                                 </div>
                                 <div>
                                     <label className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 block">Password</label>
                                     <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="••••••••" className="w-full bg-black/50 border border-stone-700 p-4 text-sm text-white focus:outline-none focus:border-[#CFA94A] transition-colors rounded-sm" required />
                                 </div>
-                                {authError && <p className="text-red-500 text-[10px] uppercase tracking-widest pt-2">{authError}</p>}
-                                <button disabled={isSubmitting} type="submit" className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 mt-2 text-[10px] uppercase tracking-widest font-bold shadow-lg disabled:opacity-50 rounded-md">
-                                    {isSubmitting ? 'Authenticating...' : (isLoginMode ? 'Enter Atelier' : 'Join Society')}
+                                {authError && <p className="text-red-500 text-[10px] uppercase tracking-widest pt-2 text-center">{authError}</p>}
+                                <button disabled={isSubmitting} type="submit" className="liquid-btn w-full bg-gradient-to-r from-[#d9772b] to-[#CFA94A] text-white py-4 mt-4 text-[10px] uppercase tracking-widest font-bold shadow-lg disabled:opacity-50 rounded-md">
+                                    {isSubmitting ? 'Authenticating...' : (isLoginView ? 'Enter Atelier' : 'Join Society')}
                                 </button>
                             </form>
                         </div>
@@ -1637,7 +1652,7 @@
                                     </button>
                                 ))}
                             </div>
-                            <button onClick={async () => { if (supabaseClient) await supabaseClient.auth.signOut(); setUser(null); }} className="mt-auto pt-8 flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest text-stone-600 hover:text-red-500 transition-colors">Sign Out</button>
+                            <button onClick={handleSignOut} className="mt-auto pt-8 flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest text-stone-600 hover:text-red-500 transition-colors">Sign Out</button>
                         </div>
 
                         <div className="flex-1 glass-panel p-8 md:p-12 animate-in fade-in duration-500 min-h-[500px] rounded-xl overflow-hidden">
@@ -1731,6 +1746,14 @@
                                             </div>
                                         ))}
                                     </div>
+                                    <div className="p-6 border border-dashed border-[#CFA94A]/30 bg-[#CFA94A]/5 rounded-sm">
+                                        <h4 className="text-[10px] tracking-[0.3em] uppercase mb-3 text-[#CFA94A] font-bold">Referral Program</h4>
+                                        <p className="text-xs text-stone-400 mb-4 leading-relaxed">Invite a friend to the Atelier using your unique code. When their first order is delivered, they receive +100 welcome points, and you receive +300 points.</p>
+                                        <div className="flex justify-between items-center bg-black border border-stone-800 p-3">
+                                            <span className="text-xs font-mono tracking-widest text-[#CFA94A]">{user.referralCode}</span>
+                                            <button className="text-[9px] uppercase tracking-[0.2em] text-white hover:text-[#CFA94A] transition-all font-bold">Copy Code</button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -1741,7 +1764,7 @@
         }
 
         // ==========================================
-        // 7. APP WRAPPER
+        // 6. MAIN APP ORCHESTRATOR
         // ==========================================
         function App() {
             const [view, setView] = useState('home');
@@ -1762,23 +1785,6 @@
             const scrollContainerRef = useRef(null);
 
             const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
-
-            // Fetch initial state safely
-            useEffect(() => {
-                try {
-                    const savedUser = localStorage.getItem('illumineire_user');
-                    if (savedUser) setCurrentUser(JSON.parse(savedUser));
-                    const savedOrders = localStorage.getItem('illumineire_orders');
-                    if (savedOrders) setOrders(JSON.parse(savedOrders));
-                } catch(e) {}
-            }, []);
-
-            // Save state to local storage
-            useEffect(() => {
-                if (currentUser) localStorage.setItem('illumineire_user', JSON.stringify(currentUser));
-                else localStorage.removeItem('illumineire_user');
-                localStorage.setItem('illumineire_orders', JSON.stringify(orders));
-            }, [currentUser, orders]);
 
             const addToCart = (product, size) => {
                 setCartItems(prev => {
@@ -1810,15 +1816,21 @@
                     return;
                 }
 
-                const lineItems = cartItems.map(item => ({
-                    merchandiseId: item.product.shopifyVariantIds?.[item.size] || "gid://shopify/ProductVariant/MOCK_ID",
-                    quantity: item.qty
-                }));
+                const lineItems = cartItems.map(item => {
+                    let vId = item.product.shopifyVariantIds?.[item.size] || "gid://shopify/ProductVariant/MOCK_ID";
+                    if (!vId.startsWith("gid://")) {
+                        try { vId = atob(vId); } catch(e) {}
+                    }
+                    return {
+                        merchandiseId: vId,
+                        quantity: item.qty
+                    };
+                });
 
                 const query = `
                     mutation cartCreate($input: CartInput!) {
                         cartCreate(input: $input) {
-                            cart { id checkoutUrl }
+                            cart { checkoutUrl }
                             userErrors { message }
                         }
                     }
@@ -1840,12 +1852,12 @@
 
                     const json = await response.json();
                     
-                    if (json.data && json.data.cartCreate.cart) {
+                    if (json.data && json.data.cartCreate && json.data.cartCreate.cart) {
                         saveLocalOrder(total);
                         window.location.href = json.data.cartCreate.cart.checkoutUrl;
                     } else {
-                        const errors = json.data?.cartCreate?.userErrors;
-                        const errorMsg = errors && errors.length > 0 ? errors[0].message : "Please verify your Storefront Variant IDs correspond to physical inventory.";
+                        const errors = json.data?.cartCreate?.userErrors || json.errors;
+                        const errorMsg = errors && errors.length > 0 ? errors[0].message : "Please verify your Storefront Variant IDs are published to the Headless Channel.";
                         setNotifyData({ title: "Variant Sync Required", message: `Shopify Connected! However, Variant configuration returned: "${errorMsg}"` });
                         setIsNotifyOpen(true);
                     }
@@ -1884,7 +1896,11 @@
             };
 
             useEffect(() => {
-                const handleHashChange = () => setView(window.location.hash.replace('#', '') || 'home');
+                const handleHashChange = () => {
+                    const newView = window.location.hash.replace('#', '') || 'home';
+                    setView(newView);
+                    window.scrollTo(0,0);
+                };
                 handleHashChange();
                 window.addEventListener('hashchange', handleHashChange);
                 return () => window.removeEventListener('hashchange', handleHashChange);
@@ -1893,10 +1909,26 @@
             useEffect(() => {
                 const isTouch = window.matchMedia("(pointer: coarse)").matches;
                 setIsTouchDevice(isTouch);
-                const handleScroll = () => setIsScrolled(window.scrollY > 50);
-                window.addEventListener('scroll', handleScroll, { passive: true });
-                return () => window.removeEventListener('scroll', handleScroll);
-            }, []);
+                if (isTouch) {
+                    const handleScroll = () => { setIsScrolled(window.scrollY > 50); setScrollY(window.scrollY); };
+                    window.addEventListener('scroll', handleScroll);
+                    return () => window.removeEventListener('scroll', handleScroll);
+                }
+
+                let current = 0; let target = 0; const ease = 0.08; let reqId;
+                const setBodyHeight = () => { if(scrollContainerRef.current && !isCartOpen) document.body.style.height = `${scrollContainerRef.current.getBoundingClientRect().height}px`; };
+                window.addEventListener('resize', setBodyHeight); setTimeout(setBodyHeight, 500); 
+                const scrollHandler = () => { target = window.scrollY; }; window.addEventListener('scroll', scrollHandler);
+
+                const smoothScroll = () => {
+                    current += (target - current) * ease;
+                    setIsScrolled(current > 50); setScrollY(current);
+                    if (scrollContainerRef.current && !isCartOpen) scrollContainerRef.current.style.transform = `translate3d(0, -${current}px, 0)`;
+                    reqId = requestAnimationFrame(smoothScroll);
+                };
+                reqId = requestAnimationFrame(smoothScroll);
+                return () => { window.removeEventListener('resize', setBodyHeight); window.removeEventListener('scroll', scrollHandler); cancelAnimationFrame(reqId); document.body.style.height = 'auto'; };
+            }, [view, isCartOpen]);
 
             const navigateTo = (newHash) => { window.location.hash = newHash; setMobileMenuOpen(false); window.scrollTo(0,0); };
 
@@ -1921,7 +1953,7 @@
             };
 
             return (
-                <div className="bg-[#000000] text-stone-300 font-serif selection:bg-[#CFA94A]/40 selection:text-white relative overflow-x-hidden min-h-screen flex flex-col">
+                <div className={`bg-[#000000] text-stone-300 font-serif selection:bg-[#CFA94A]/40 selection:text-white relative ${isTouchDevice || isCartOpen ? 'overflow-x-hidden' : 'overflow-hidden cursor-none'}`}>
                     <CustomCursor />
                     <StarfieldBackground />
                     <ShoppingBag isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} navigateTo={navigateTo} />
@@ -1965,53 +1997,52 @@
                         </div>
                     )}
 
-                    <div className="flex-grow w-full relative z-10">
+                    <div className={`w-full ${isTouchDevice || isCartOpen ? '' : 'fixed top-0 left-0'}`} ref={scrollContainerRef}>
                         {renderView()}
-                    </div>
 
-                    {/* --- Footer --- */}
-                    {!view.startsWith('product/') && view !== 'checkout' && view !== 'order-success' && view !== 'dashboard' && view !== 'offers' && view !== 'admin' && view !== 'profiler' && view !== 'privacy' && view !== 'terms' && (
-                        <footer className="bg-[#000000]/90 backdrop-blur-xl pt-24 pb-12 px-6 md:px-12 lg:px-24 border-t border-[#CFA94A]/20 text-stone-400 font-sans relative z-10 mt-auto">
-                            <Reveal>
-                                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-20 font-sans">
-                                    <div className="md:col-span-1">
-                                        <div className="text-lg tracking-[0.3em] font-medium text-[#CFA94A] mb-4 font-cinzel flex items-center gap-3"><BrandLogo /> ILLUMINEIRE</div>
-                                        <p className="text-sm italic text-stone-300 mb-2 font-serif">Let the light in.</p>
-                                        <p className="text-[10px] tracking-widest uppercase font-light text-stone-500">A Pakistan Based Luxury Fragrance Brand.</p>
+                        {/* --- Footer --- */}
+                        {!view.startsWith('product/') && view !== 'checkout' && view !== 'order-success' && view !== 'dashboard' && view !== 'offers' && view !== 'admin' && view !== 'profiler' && view !== 'privacy' && view !== 'terms' && (
+                            <footer className="bg-[#000000]/90 backdrop-blur-xl pt-24 pb-12 px-6 md:px-12 lg:px-24 border-t border-[#CFA94A]/20 text-stone-400 font-sans relative z-10 mt-auto">
+                                <Reveal>
+                                    <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-20 font-sans">
+                                        <div className="md:col-span-1">
+                                            <div className="text-lg tracking-[0.3em] font-medium text-[#CFA94A] mb-4 font-cinzel flex items-center gap-3"><BrandLogo /> ILLUMINEIRE</div>
+                                            <p className="text-sm italic text-stone-300 mb-2 font-serif">Let the light in.</p>
+                                            <p className="text-[10px] tracking-widest uppercase font-light text-stone-500">A Pakistan Based Luxury Fragrance Brand.</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Explore</h4>
+                                            <ul className="space-y-4 text-xs tracking-wider font-light">
+                                                <li><button onClick={() => navigateTo('story')} className="hover:text-[#CFA94A] transition-colors">Story</button></li>
+                                                <li><button onClick={() => navigateTo('catalog')} className="hover:text-[#CFA94A] transition-colors">Fragrances</button></li>
+                                                <li><button onClick={() => navigateTo('offers')} className="hover:text-[#CFA94A] transition-colors">Offers</button></li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Help</h4>
+                                            <ul className="space-y-4 text-xs tracking-wider font-light">
+                                                <li><button className="hover:text-[#CFA94A] transition-colors">FAQ</button></li>
+                                                <li><a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-[#CFA94A] transition-colors">Contact</a></li>
+                                                <li><button onClick={() => navigateTo('privacy')} className="hover:text-[#CFA94A] transition-colors">Delivery & Returns</button></li>
+                                                <li><button onClick={() => navigateTo('privacy')} className="hover:text-[#CFA94A] transition-colors">Privacy Policy</button></li>
+                                                <li><button onClick={() => navigateTo('terms')} className="hover:text-[#CFA94A] transition-colors">Terms of Service</button></li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Connect</h4>
+                                            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs tracking-wider font-light hover:text-[#CFA94A] transition-colors mb-4 font-sans"><Instagram size={14} /> WhatsApp Support</a>
+                                            <a href="https://www.instagram.com/illumineire?igsh=dzQxY2ZhYzZ4Zm4=" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs tracking-wider font-light hover:text-[#CFA94A] transition-colors mb-4 font-sans"><Instagram size={14} /> @illumineire</a>
+                                            <p className="text-[10px] font-light text-stone-500 font-sans mt-6">Inquiries via Email, WhatsApp & Instagram.</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Explore</h4>
-                                        <ul className="space-y-4 text-xs tracking-wider font-light">
-                                            <li><button onClick={() => navigateTo('story')} className="hover:text-[#CFA94A] transition-colors">Story</button></li>
-                                            <li><button onClick={() => navigateTo('catalog')} className="hover:text-[#CFA94A] transition-colors">Fragrances</button></li>
-                                            <li><button onClick={() => navigateTo('offers')} className="hover:text-[#CFA94A] transition-colors">Offers</button></li>
-                                        </ul>
+                                    <div className="max-w-7xl mx-auto border-t border-stone-800 pt-8 text-center flex flex-col items-center">
+                                        <p className="text-[9px] tracking-[0.3em] uppercase text-stone-600 font-semibold font-sans mb-4">© 2026 ILLUMINEIRE — A NEW ERA OF FRAGRANCE</p>
+                                        <button onClick={() => navigateTo('admin')} className="text-[8px] text-stone-800 hover:text-stone-500 transition-colors uppercase tracking-widest">Admin Portal</button>
                                     </div>
-                                    <div>
-                                        <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Help</h4>
-                                        <ul className="space-y-4 text-xs tracking-wider font-light">
-                                            <li><button className="hover:text-[#CFA94A] transition-colors">FAQ</button></li>
-                                            <li><a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-[#CFA94A] transition-colors">Contact</a></li>
-                                            <li><button onClick={() => navigateTo('privacy')} className="hover:text-[#CFA94A] transition-colors">Delivery & Returns</button></li>
-                                            <li><button onClick={() => navigateTo('privacy')} className="hover:text-[#CFA94A] transition-colors">Privacy Policy</button></li>
-                                            <li><button onClick={() => navigateTo('terms')} className="hover:text-[#CFA94A] transition-colors">Terms of Service</button></li>
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-[10px] uppercase tracking-widest text-[#CFA94A] font-bold mb-6">Connect</h4>
-                                        <a href="mailto:illumineirefragrances@gmail.com" className="flex items-center gap-2 text-xs tracking-wider font-light hover:text-[#CFA94A] transition-colors mb-4 font-sans"><MailIcon size={14} /> illumineirefragrances@gmail.com</a>
-                                        <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs tracking-wider font-light hover:text-[#CFA94A] transition-colors mb-4 font-sans"><Instagram size={14} /> WhatsApp Support</a>
-                                        <a href="https://www.instagram.com/illumineire?igsh=dzQxY2ZhYzZ4Zm4=" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs tracking-wider font-light hover:text-[#CFA94A] transition-colors mb-4 font-sans"><Instagram size={14} /> @illumineire</a>
-                                        <p className="text-[10px] font-light text-stone-500 font-sans mt-6">Inquiries via Email, WhatsApp & Instagram.</p>
-                                    </div>
-                                </div>
-                                <div className="max-w-7xl mx-auto border-t border-stone-800 pt-8 text-center flex flex-col items-center">
-                                    <p className="text-[9px] tracking-[0.3em] uppercase text-stone-600 font-semibold font-sans mb-4">© 2026 ILLUMINEIRE — A NEW ERA OF FRAGRANCE</p>
-                                    <button onClick={() => navigateTo('admin')} className="text-[8px] text-stone-800 hover:text-stone-500 transition-colors uppercase tracking-widest">Admin Portal</button>
-                                </div>
-                            </Reveal>
-                        </footer>
-                    )}
+                                </Reveal>
+                            </footer>
+                        )}
+                    </div>
                 </div>
             );
         }
